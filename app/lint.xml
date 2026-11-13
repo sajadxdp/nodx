@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Intentionally pinned to the last generation compatible with
+         compileSdk 36 / AGP 8.13. Newer androidx versions require
+         compileSdk 37 + AGP 9.x, which are not yet in the stable SDK.
+         Re-evaluate when platform 37 ships in the stable channel. -->
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <!-- ChatDb cursors are all managed with Kotlin's .use { } which closes
+         them on every path; the Recycle detector misses `.use` chains. -->
+    <issue id="Recycle" severity="ignore" />
+    <!-- mipmap-anydpi-v26: AAPT2 in AGP 8.13 rejects the qualifier-less
+         mipmap-anydpi folder for adaptive icons despite minSdk 28. -->
+    <issue id="ObsoleteSdkInt" severity="ignore" />
+</lint>

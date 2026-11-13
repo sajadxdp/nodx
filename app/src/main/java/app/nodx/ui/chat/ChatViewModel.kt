@@ -137,12 +137,12 @@ class ChatViewModel(
     }
 
     fun stop() {
-        genJob?.cancel()
-        genJob = null
-        // Engines observe their own cancel paths; the job cancel unwinds collect.
+        // Deliberately NOT canceling genJob: the engine cancel paths close
+        // their streams, letting the job wind down naturally so the partial
+        // reply is persisted. Canceling the job here would skip the
+        // final insert and lose the partial from the database.
         viewModelScope.launch { container.localEngine.cancel() }
         container.cloudEngine.cancel()
-        _state.value = _state.value.copy(isGenerating = false)
     }
 
     /** Drops the last assistant message (or error bubble) and re-asks the

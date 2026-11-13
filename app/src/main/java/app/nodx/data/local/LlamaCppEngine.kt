@@ -158,8 +158,11 @@ class LlamaCppEngine(private val context: Context) : ChatEngine {
 
     override fun cancel() {
         cancelRequested.set(true)
-        // Flips the wrapper's stop flag; safe from any thread.
-        runCatching { nativeThread.submit(java.util.concurrent.Callable { Bridge.stop() }).get() }
+        // g_stop_flag is std::atomic<bool> in the wrapper and nativeStop is a
+        // tiny flag write meant to be called from any thread — call it
+        // directly. Queueing it on the nativeThread executor would deadlock:
+        // it would sit behind the blocking generate it is meant to stop.
+        runCatching { Bridge.stop() }
     }
 
     override val stats: EngineStats?

@@ -47,3 +47,4 @@ app.nodx.app-packageDebugResources-45 /home/sajad/nodx/app/build/intermediates/i
 app.nodx.app-debug-46 /home/sajad/nodx/app/build/intermediates/merged_res/debug/mergeDebugResources
 app.nodx.app-debug-47 /home/sajad/nodx/app/src/debug/res
 app.nodx.app-main-48 /home/sajad/nodx/app/src/main/res
+app.nodx.app-debug-49 /home/sajad/nodx/llama/build/intermediates/packaged_res/debug/packageDebugResources

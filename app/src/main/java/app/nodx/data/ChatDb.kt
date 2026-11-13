@@ -55,6 +55,7 @@ class ChatDb(context: Context) :
 
 class ChatRepository(private val db: ChatDb) {
 
+    @android.annotation.SuppressLint("Recycle") // closed via .use below
     suspend fun sessions(): List<ChatSession> = withContext(Dispatchers.IO) {
         db.readableDatabase.rawQuery(
             "SELECT id, title, engine_mode, model_id, created_at, updated_at " +
@@ -78,6 +79,7 @@ class ChatRepository(private val db: ChatDb) {
         }
     }
 
+    @android.annotation.SuppressLint("Recycle") // closed via .use below
     suspend fun messages(sessionId: String): List<ChatMessage> = withContext(Dispatchers.IO) {
         db.readableDatabase.rawQuery(
             "SELECT id, session_id, role, content, error, latency_ms, created_at " +
@@ -148,6 +150,7 @@ class ChatRepository(private val db: ChatDb) {
         )
     }
 
+    @android.annotation.SuppressLint("Recycle") // closed via .use below
     suspend fun sessionTitle(id: String): String? = withContext(Dispatchers.IO) {
         db.readableDatabase.rawQuery(
             "SELECT title FROM sessions WHERE id = ?", arrayOf(id),
@@ -156,6 +159,7 @@ class ChatRepository(private val db: ChatDb) {
 
     // ── Downloaded models ─────────────────────────────────────────
 
+    @android.annotation.SuppressLint("Recycle") // closed via .use below
     suspend fun downloadedModels(): List<DownloadedModel> = withContext(Dispatchers.IO) {
         db.readableDatabase.rawQuery(
             "SELECT id, filename, size_bytes, context_length, chat_template, added_at " +

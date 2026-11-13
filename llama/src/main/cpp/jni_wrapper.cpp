@@ -1221,7 +1221,7 @@ Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeGenera
     jmethodID invokeMethod = env->GetMethodID(callbackClass, "invoke", "(Ljava/lang/Object;)Ljava/lang/Object;");
 
     // Generation loop
-    LOGI("Starting generation loop: max_tokens=%lld", max_tokens);
+    LOGI("Starting generation loop: max_tokens=%ld", static_cast<long>(max_tokens));
     for (int i = 0; i < max_tokens && !g_stop_flag; i++) {
         llama_token new_token_id = llama_sampler_sample(g_sampler, g_ctx, -1);
 
