@@ -88,3 +88,10 @@ filtered), tap **Load**, and switch **Engine mode → Local**.
   JNI symbols in `jni_wrapper.cpp` bind to that exact class path.
 
 [PrivateLM]: https://github.com/orailnoor/cross-platform-llm-client
+
+## Release
+
+Releases are signed APKs published on [GitHub Releases](https://github.com/sajadxdp/nodx/releases).
+Signing uses a local `keystore.properties` (gitignored) pointing at a PKCS12
+keystore — **back up that keystore**: it is the app's update identity; losing
+it means a new signature and uninstall/reinstall for every user.
