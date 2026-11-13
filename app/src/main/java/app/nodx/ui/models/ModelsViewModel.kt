@@ -7,6 +7,7 @@ import app.nodx.data.CatalogModel
 import app.nodx.data.DownloadState
 import app.nodx.data.DownloadedModel
 import app.nodx.data.local.GgufMetadata
+import app.nodx.data.EngineModeSetting
 import app.nodx.domain.LoadRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -103,6 +104,11 @@ class ModelsViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** After a model is loaded: flip engine mode to Local so chat uses it. */
+    fun useInChat() {
+        viewModelScope.launch { container.settings.setEngineMode(EngineModeSetting.LOCAL) }
+    }
+
     /** Loads (or unloads) a downloaded model into the local engine. */
     fun toggleLoad(model: DownloadedModel) {
         val engine = container.localEngine
@@ -124,6 +130,7 @@ class ModelsViewModel(private val container: AppContainer) : ViewModel() {
                     loadedPath = engine.loadedModelPath,
                     isLoadingModel = false,
                 )
+                if (engine.isReady) useInChat()
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isLoadingModel = false,

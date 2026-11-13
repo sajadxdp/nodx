@@ -18,6 +18,8 @@ enum class Provider(val label: String, val defaultBaseUrl: String, val defaultMo
     OPENROUTER("OpenRouter", "https://openrouter.ai/api/v1", "openai/gpt-4o-mini"),
     DEEPSEEK("DeepSeek", "https://api.deepseek.com/v1", "deepseek-chat"),
     KIMI("Kimi (Moonshot)", "https://api.moonshot.ai/v1", "kimi-k2.6"),
+    ANTHROPIC("Anthropic", "https://api.anthropic.com/v1", "claude-sonnet-4-6"),
+    GOOGLE("Google", "https://generativelanguage.googleapis.com/v1beta", "gemini-2.5-flash"),
     CUSTOM("Custom (OpenAI-compatible)", "", "");
 }
 

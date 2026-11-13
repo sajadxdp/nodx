@@ -19,18 +19,24 @@ and de-Fluttered.
 
 ## Feature status
 
-- ✅ **Chat** — streaming, cancelable, full-history context, error bubbles,
-  persisted sessions
-- ✅ **Cloud engines** — OpenAI, OpenRouter, DeepSeek, Kimi, custom
-  OpenAI-compatible endpoints (SSE, fixture-tested parser)
+- ✅ **Chat** — streaming, cancelable, full-history context, error bubbles with
+  Retry, Regenerate (drops the last reply and re-asks), copy on long-press,
+  light markdown (bold, inline code, fenced blocks), live stats line
+  (engine · tok/s · context fill), persisted sessions
+- ✅ **Cloud engines** — OpenAI, OpenRouter, DeepSeek, Kimi, **Anthropic**
+  (Messages API), **Google** (streamGenerateContent SSE), custom
+  OpenAI-compatible endpoints; fixture-tested parsers for all three protocols
 - ✅ **Local engine** — GGUF models on-device via llama.cpp; device-tier
-  auto-config (context size, threads); GGUF header metadata parsing
+  auto-config (context size, threads); GGUF header metadata parsing; loading a
+  model auto-switches chat to Local
 - ✅ **Model catalog & downloader** — curated list filtered by device RAM,
   HTTP-Range resume, pause, live speed/ETA
+- ✅ **Sessions** — rename (dialog), delete with confirmation, relative times,
+  opening restores the full transcript
 - ✅ **Settings** — provider/keys/model, system prompt, temperature, max
   tokens, engine mode, theme
-- ⏳ **Later** — Anthropic/Google native adapters, vision (mmproj), Vulkan
-  backend (NDK shader limits), release signing
+- ⏳ **Later** — vision (mmproj), Vulkan backend (NDK shader limits), release
+  signing
 
 ## Architecture
 

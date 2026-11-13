@@ -184,7 +184,7 @@ private fun DownloadedModelCard(
         )
         AnimatedVisibility(visible = isLoaded) {
             Text(
-                "Loaded — switch Engine mode to Local in Settings",
+                "Loaded — chat now uses this model locally",
                 style = MaterialTheme.typography.bodySmall,
                 color = theme.primary,
                 modifier = Modifier.padding(start = 16.dp, bottom = 12.dp),

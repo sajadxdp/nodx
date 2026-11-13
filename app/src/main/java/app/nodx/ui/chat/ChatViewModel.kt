@@ -72,6 +72,7 @@ class ChatViewModel(
         genJob = viewModelScope.launch {
             repo.upsertSession(session)
             repo.insertMessage(userMsg)
+            if (existing) repo.touchSession(sessionId)
 
             // Full conversation history — the engine sees the whole chat.
             val history = _state.value.messages
@@ -141,6 +142,79 @@ class ChatViewModel(
         // Engines observe their own cancel paths; the job cancel unwinds collect.
         viewModelScope.launch { container.localEngine.cancel() }
         container.cloudEngine.cancel()
+        _state.value = _state.value.copy(isGenerating = false)
+    }
+
+    /** Drops the last assistant message (or error bubble) and re-asks the
+     * last user message. No-op when there is nothing to regenerate. */
+    fun regenerate() {
+        if (state.value.isGenerating) return
+        val msgs = state.value.messages
+        val lastUser = msgs.lastOrNull { it.role == MessageRole.USER } ?: return
+        val sessionId = state.value.sessionId ?: return
+
+        // Delete the last assistant message from state and DB.
+        val lastAssistant = msgs.lastOrNull { it.role == MessageRole.ASSISTANT }
+        val kept = if (lastAssistant != null) {
+            viewModelScope.launch { repo.deleteMessage(lastAssistant.id) }
+            msgs.filter { it.id != lastAssistant.id }
+        } else msgs
+
+        _state.value = _state.value.copy(messages = kept)
+
+        // Re-send the last user message against the trimmed history.
+        genJob = viewModelScope.launch {
+            _state.value = _state.value.copy(isGenerating = true)
+            val history = kept
+            val cfg = settings.current()
+            val engine = pickEngine(cfg) ?: run {
+                finishWithFailure(sessionId, "No engine available — check Settings or Models.")
+                return@launch
+            }
+            val started = System.currentTimeMillis()
+            val reply = StringBuilder()
+            var failure: String? = null
+            try {
+                engine.generate(
+                    GenerateRequest(
+                        messages = toEngineMessages(history, cfg.systemPrompt.ifBlank { null }),
+                        temperature = cfg.temperature,
+                        maxTokens = cfg.maxTokens,
+                    )
+                ).collect { event ->
+                    when (event) {
+                        is TokenEvent.Delta -> {
+                            reply.append(event.text)
+                            _state.value = _state.value.copy(
+                                messages = withLiveAssistant(reply.toString()),
+                                stats = engine.stats,
+                            )
+                        }
+                        is TokenEvent.Failed -> failure = event.error.message ?: "Generation failed"
+                        is TokenEvent.Done -> _state.value = _state.value.copy(stats = engine.stats)
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                failure = e.message ?: e.toString()
+            }
+            val latency = System.currentTimeMillis() - started
+            val finalMsg = ChatMessage(
+                id = repo.newId(),
+                sessionId = sessionId,
+                role = MessageRole.ASSISTANT,
+                content = if (failure != null) "" else reply.toString(),
+                error = failure,
+                latencyMs = latency,
+            )
+            if (finalMsg.content.isNotEmpty() || finalMsg.error != null) {
+                repo.insertMessage(finalMsg)
+            }
+            _state.value = _state.value.copy(
+                messages = _state.value.messages.filter { it.id != LIVE_ID } + finalMsg,
+                isGenerating = false,
+            )
+        }
     }
 
     fun newSession() {
@@ -163,11 +237,15 @@ class ChatViewModel(
 
     private suspend fun pickEngine(cfg: Settings): ChatEngine? = when (cfg.engineMode) {
         EngineModeSetting.LOCAL ->
-            if (container.localEngine.isReady) container.localEngine else null
+            if (container.localEngine.isReady) {
+                _state.value = _state.value.copy(engineLabel = "Local · GGUF")
+                container.localEngine
+            } else null
         EngineModeSetting.CLOUD -> {
             val request = settings.cloudRequest()
             if (request != null) {
                 container.cloudEngine.load(request)
+                _state.value = _state.value.copy(engineLabel = "Cloud · ${cfg.provider.name.lowercase()}")
                 container.cloudEngine
             } else {
                 null

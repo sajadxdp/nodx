@@ -3,6 +3,8 @@ package app.nodx.ui.chat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,9 +19,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -32,6 +35,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -43,6 +47,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.nodx.AppContainer
@@ -67,7 +75,6 @@ fun ChatScreen(container: AppContainer) {
     var text by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
 
-    // Sessions → Chat handoff: open the requested session.
     LaunchedEffect(container) {
         container.openSessionRequest.collect { id ->
             if (id != null) {
@@ -87,7 +94,19 @@ fun ChatScreen(container: AppContainer) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(state.title) },
+                title = {
+                    Column {
+                        Text(state.title, maxLines = 1)
+                        state.stats?.let { stats ->
+                            val label = if (state.engineLabel.isNotBlank()) "${state.engineLabel} · " else ""
+                            Text(
+                                "$label${"%.0f".format(stats.tokensPerSecond)} tok/s · ${stats.contextUsed}/${stats.contextTotal} ctx",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                 ),
@@ -100,6 +119,15 @@ fun ChatScreen(container: AppContainer) {
                         TextButton(onClick = vm::stop) {
                             Icon(Icons.Filled.Stop, contentDescription = null)
                             Text("Stop")
+                        }
+                    }
+                    AnimatedVisibility(
+                        visible = !state.isGenerating && state.messages.size > 1,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
+                        IconButton(onClick = vm::regenerate) {
+                            Icon(Icons.Filled.Refresh, contentDescription = "Regenerate")
                         }
                     }
                     IconButton(onClick = vm::newSession) {
@@ -130,7 +158,7 @@ fun ChatScreen(container: AppContainer) {
                     ),
                 ) {
                     items(state.messages, key = { it.id }) { message ->
-                        ChatBubble(message)
+                        ChatBubble(message, onRetry = vm::regenerate)
                     }
                 }
             }
@@ -176,9 +204,11 @@ private fun EmptyChat(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ChatBubble(message: ChatMessage) {
+fun ChatBubble(message: ChatMessage, onRetry: () -> Unit = {}) {
     val theme = MaterialTheme.colorScheme
+    val clipboard = LocalClipboardManager.current
     val isUser = message.role == MessageRole.USER
     val hasError = message.error != null
 
@@ -192,7 +222,6 @@ fun ChatBubble(message: ChatMessage) {
         isUser -> theme.onPrimaryContainer
         else -> theme.onSurface
     }
-    val body = if (hasError) "⚠ ${message.error}" else message.content
 
     Row(
         Modifier.fillMaxWidth(),
@@ -209,11 +238,55 @@ fun ChatBubble(message: ChatMessage) {
             ),
             modifier = Modifier
                 .widthIn(max = 300.dp)
-                .padding(horizontal = 4.dp),
+                .padding(horizontal = 4.dp)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { clipboard?.setText(AnnotatedString(message.content)) },
+                ),
         ) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                androidx.compose.foundation.text.selection.SelectionContainer {
-                    Text(body, style = MaterialTheme.typography.bodyLarge)
+                if (hasError) {
+                    Text("⚠ ${message.error}", style = MaterialTheme.typography.bodyMedium)
+                    if (!isUser) {
+                        TextButton(onClick = onRetry) { Text("Retry") }
+                    }
+                } else if (message.content.isEmpty() && !isUser) {
+                    Text("…", style = MaterialTheme.typography.bodyLarge)
+                } else if (isUser) {
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Text(message.content, style = MaterialTheme.typography.bodyLarge)
+                    }
+                } else {
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Column {
+                            parseSegments(message.content).forEach { segment ->
+                                when (segment) {
+                                    is Segment.Rich -> Text(
+                                        segment.text,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
+                                    is Segment.Code -> Surface(
+                                        color = theme.surface.copy(alpha = 0.6f),
+                                        contentColor = content,
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                    ) {
+                                        androidx.compose.foundation.text.selection.SelectionContainer {
+                                            Text(
+                                                segment.text,
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    fontFamily = FontFamily.Monospace,
+                                                ),
+                                                modifier = Modifier.padding(8.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -241,10 +314,10 @@ private fun Composer(
             shape = RoundedCornerShape(24.dp),
             minLines = 1,
             maxLines = 5,
-            colors = androidx.compose.material3.TextFieldDefaults.colors(
-                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
             ),
         )
         val canSend = enabled && value.isNotBlank()
@@ -259,7 +332,10 @@ private fun Composer(
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         ) {
-            Icon(Icons.Filled.ArrowUpward, contentDescription = "Send")
+            Icon(
+                Icons.Filled.ArrowUpward,
+                contentDescription = "Send",
+            )
         }
     }
 }

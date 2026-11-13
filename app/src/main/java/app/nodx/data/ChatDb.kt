@@ -122,11 +122,37 @@ class ChatRepository(private val db: ChatDb) {
     }
 
     suspend fun deleteSession(id: String) = withContext(Dispatchers.IO) {
-        db.writableDatabase.execSQL("DELETE FROM messages WHERE session_id = ?", arrayOf(id))
-        db.writableDatabase.execSQL("DELETE FROM sessions WHERE id = ?", arrayOf(id))
+        db.writableDatabase.execSQL("DELETE FROM messages WHERE session_id = ?", arrayOf<Any?>(id))
+        db.writableDatabase.execSQL("DELETE FROM sessions WHERE id = ?", arrayOf<Any?>(id))
+    }
+
+    suspend fun deleteMessage(id: String) = withContext(Dispatchers.IO) {
+        db.writableDatabase.execSQL("DELETE FROM messages WHERE id = ?", arrayOf<Any?>(id))
     }
 
     fun newId(): String = UUID.randomUUID().toString()
+
+    /** Renames a session's title. */
+    suspend fun renameSession(id: String, title: String) = withContext(Dispatchers.IO) {
+        db.writableDatabase.execSQL(
+            "UPDATE sessions SET title = ? WHERE id = ?",
+            arrayOf<Any?>(title, id),
+        )
+    }
+
+    /** Refreshes a session's updatedAt so list ordering reflects new activity. */
+    suspend fun touchSession(id: String) = withContext(Dispatchers.IO) {
+        db.writableDatabase.execSQL(
+            "UPDATE sessions SET updated_at = ? WHERE id = ?",
+            arrayOf<Any?>(System.currentTimeMillis(), id),
+        )
+    }
+
+    suspend fun sessionTitle(id: String): String? = withContext(Dispatchers.IO) {
+        db.readableDatabase.rawQuery(
+            "SELECT title FROM sessions WHERE id = ?", arrayOf(id),
+        ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
+    }
 
     // ── Downloaded models ─────────────────────────────────────────
 
