@@ -10,7 +10,6 @@ import app.nodx.data.cloud.CloudEngine
 import app.nodx.data.local.DeviceProfile
 import app.nodx.data.local.LlamaCppEngine
 import app.nodx.domain.ChatEngine
-import app.nodx.domain.FakeEngine
 import kotlinx.coroutines.flow.MutableStateFlow
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -27,7 +26,6 @@ class AppContainer(app: Application) {
     val chatRepository: ChatRepository = ChatRepository(ChatDb(app))
     val cloudEngine: ChatEngine = CloudEngine(http)
     val localEngine: LlamaCppEngine = LlamaCppEngine(app)
-    val fakeEngine: ChatEngine = FakeEngine()
     val deviceProfile: DeviceProfile = DeviceProfile(app)
     val modelDownloader = ModelDownloader(http, app)
     val catalog = ModelCatalog(app)
