@@ -19,5 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Xero"
+rootProject.name = "nodx"
 include(":app")
+include(":llama")

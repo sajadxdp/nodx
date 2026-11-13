@@ -4,7 +4,7 @@
     "type": "PACKAGED_MANIFESTS",
     "kind": "Directory"
   },
-  "applicationId": "app.xero.xero",
+  "applicationId": "app.nodx",
   "variantName": "debug",
   "elements": [
     {

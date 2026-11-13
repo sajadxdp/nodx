@@ -3,4 +3,4 @@ local
 color ic_launcher_background
 drawable ic_launcher_foreground
 mipmap ic_launcher
-style Theme.Xero
+style Theme.Nodx

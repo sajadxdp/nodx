@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#0EA5A0</color>
-    <style name="Theme.Xero" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.Nodx" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@android:color/white</item>
     </style>
 </resources>

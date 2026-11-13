@@ -1,0 +1,68 @@
+[
+  {
+    "id": "qwen2.5-0.5b-q4",
+    "name": "Qwen 2.5 0.5B",
+    "filename": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+    "url": "https://hf.co/bartowski/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "sizeBytes": 494198400,
+    "minRamGb": 2.0,
+    "paramsBn": 0.5,
+    "quant": "Q4_K_M",
+    "description": "Tiny and fast — runs on any phone. Great for testing the local engine."
+  },
+  {
+    "id": "qwen2.5-1.5b-q4",
+    "name": "Qwen 2.5 1.5B",
+    "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "url": "https://hf.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+    "sizeBytes": 1165250000,
+    "minRamGb": 3.5,
+    "paramsBn": 1.5,
+    "quant": "Q4_K_M",
+    "description": "The quality floor for useful answers; still quick on mid-range phones."
+  },
+  {
+    "id": "llama-3.2-1b-q4",
+    "name": "Llama 3.2 1B",
+    "filename": "llama-3.2-1b-instruct-q4_k_m.gguf",
+    "url": "https://hf.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+    "sizeBytes": 806475000,
+    "minRamGb": 3.0,
+    "paramsBn": 1.0,
+    "quant": "Q4_K_M",
+    "description": "Meta's compact multilingual assistant model."
+  },
+  {
+    "id": "llama-3.2-3b-q4",
+    "name": "Llama 3.2 3B",
+    "filename": "llama-3.2-3b-instruct-q4_k_m.gguf",
+    "url": "https://hf.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+    "sizeBytes": 2019990000,
+    "minRamGb": 5.0,
+    "paramsBn": 3.0,
+    "quant": "Q4_K_M",
+    "description": "Serious local quality; wants 6 GB of RAM."
+  },
+  {
+    "id": "gemma-2-2b-q4",
+    "name": "Gemma 2 2B",
+    "filename": "gemma-2-2b-it-q4_k_m.gguf",
+    "url": "https://hf.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf",
+    "sizeBytes": 1725350000,
+    "minRamGb": 4.5,
+    "paramsBn": 2.0,
+    "quant": "Q4_K_M",
+    "description": "Google's efficient small model with strong general knowledge."
+  },
+  {
+    "id": "phi-3.5-mini-q4",
+    "name": "Phi 3.5 Mini",
+    "filename": "phi-3.5-mini-instruct-q4_k_m.gguf",
+    "url": "https://hf.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf",
+    "sizeBytes": 2493000000,
+    "minRamGb": 6.0,
+    "paramsBn": 3.8,
+    "quant": "Q4_K_M",
+    "description": "Microsoft's reasoning-focused small model."
+  }
+]

@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="app.xero.xero"
+    package="app.nodx"
     android:versionCode="1"
     android:versionName="0.1.0" >
 
     <uses-sdk
-        android:minSdkVersion="26"
+        android:minSdkVersion="28"
         android:targetSdkVersion="36" />
 
     <uses-permission android:name="android.permission.INTERNET" />
 
     <permission
-        android:name="app.xero.xero.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:name="app.nodx.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
         android:protectionLevel="signature" />
 
-    <uses-permission android:name="app.xero.xero.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+    <uses-permission android:name="app.nodx.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 
     <application
-        android:name="app.xero.xero.XeroApplication"
+        android:name="app.nodx.NodxApplication"
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:debuggable="true"
         android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Xero"
+        android:label="nodx"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Xero" >
+        android:theme="@style/Theme.Nodx" >
         <activity
-            android:name="app.xero.xero.MainActivity"
+            android:name="app.nodx.MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize" >
             <intent-filter>
@@ -48,7 +48,7 @@
 
         <provider
             android:name="androidx.startup.InitializationProvider"
-            android:authorities="app.xero.xero.androidx-startup"
+            android:authorities="app.nodx.androidx-startup"
             android:exported="false" >
             <meta-data
                 android:name="androidx.emoji2.text.EmojiCompatInitializer"

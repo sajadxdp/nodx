@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "app.xero.xero.app-mergeDebugResources-43:/values-night-v8/values-night-v8.xml",
+            "outputFile": "app.nodx.app-mergeDebugResources-43:/values-night-v8/values-night-v8.xml",
             "map": [
                 {
                     "source": "/home/sajad/.gradle/caches/9.3.1/transforms/327b8c33258812cb12dad8b631d63b82/transformed/appcompat-1.7.1/res/values-night-v8/values-night-v8.xml",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "/home/sajad/xero-native/app/src/main/res/values-night/themes.xml",
+                    "source": "/home/sajad/nodx/app/src/main/res/values-night/themes.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

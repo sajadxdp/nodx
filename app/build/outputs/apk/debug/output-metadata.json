@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "app.xero.xero",
+  "applicationId": "app.nodx",
   "variantName": "debug",
   "elements": [
     {
@@ -17,5 +17,5 @@
     }
   ],
   "elementType": "File",
-  "minSdkVersionForDexing": 26
+  "minSdkVersionForDexing": 28
 }

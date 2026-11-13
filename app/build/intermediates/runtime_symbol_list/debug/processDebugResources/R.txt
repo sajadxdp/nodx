@@ -1369,7 +1369,7 @@ int style Theme_AppCompat_Light_Dialog_MinWidth 0x7f0e010a
 int style Theme_AppCompat_Light_DialogWhenLarge 0x7f0e010b
 int style Theme_AppCompat_Light_NoActionBar 0x7f0e010c
 int style Theme_AppCompat_NoActionBar 0x7f0e010d
-int style Theme_Xero 0x7f0e010e
+int style Theme_Nodx 0x7f0e010e
 int style ThemeOverlay_AppCompat 0x7f0e010f
 int style ThemeOverlay_AppCompat_ActionBar 0x7f0e0110
 int style ThemeOverlay_AppCompat_Dark 0x7f0e0111

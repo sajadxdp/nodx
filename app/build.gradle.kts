@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-    namespace = "app.xero.xero"
+    namespace = "app.nodx"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "app.xero.xero"
-        minSdk = 26
+        applicationId = "app.nodx"
+        minSdk = 28 // matches :llama (Vulkan 1.1 symbols); Android 9+
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
@@ -40,6 +40,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":llama"))
+
     val composeBom = platform("androidx.compose:compose-bom:2026.06.01")
     implementation(composeBom)
 
@@ -66,4 +68,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    testImplementation("junit:junit:4.13.2")
+}
+
+tasks.withType<Test> {
+    useJUnit()
 }

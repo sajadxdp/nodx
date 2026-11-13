@@ -1,61 +1,61 @@
 1<?xml version="1.0" encoding="utf-8"?>
 2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-3    package="app.xero.xero"
+3    package="app.nodx"
 4    android:versionCode="1"
 5    android:versionName="0.1.0" >
 6
 7    <uses-sdk
-8        android:minSdkVersion="26"
+8        android:minSdkVersion="28"
 9        android:targetSdkVersion="36" />
 10
 11    <uses-permission android:name="android.permission.INTERNET" />
-11-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:4:5-67
-11-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:4:22-64
+11-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:4:5-67
+11-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:4:22-64
 12
 13    <permission
 13-->[androidx.core:core:1.18.0] /home/sajad/.gradle/caches/9.3.1/transforms/bd26905da2a9ca9f3d5e869b1de8fb21/transformed/core-1.18.0/AndroidManifest.xml:22:5-24:47
-14        android:name="app.xero.xero.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+14        android:name="app.nodx.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
 14-->[androidx.core:core:1.18.0] /home/sajad/.gradle/caches/9.3.1/transforms/bd26905da2a9ca9f3d5e869b1de8fb21/transformed/core-1.18.0/AndroidManifest.xml:23:9-81
 15        android:protectionLevel="signature" />
 15-->[androidx.core:core:1.18.0] /home/sajad/.gradle/caches/9.3.1/transforms/bd26905da2a9ca9f3d5e869b1de8fb21/transformed/core-1.18.0/AndroidManifest.xml:24:9-44
 16
-17    <uses-permission android:name="app.xero.xero.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+17    <uses-permission android:name="app.nodx.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 17-->[androidx.core:core:1.18.0] /home/sajad/.gradle/caches/9.3.1/transforms/bd26905da2a9ca9f3d5e869b1de8fb21/transformed/core-1.18.0/AndroidManifest.xml:26:5-97
 17-->[androidx.core:core:1.18.0] /home/sajad/.gradle/caches/9.3.1/transforms/bd26905da2a9ca9f3d5e869b1de8fb21/transformed/core-1.18.0/AndroidManifest.xml:26:22-94
 18
 19    <application
-19-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:6:5-22:19
-20        android:name="app.xero.xero.XeroApplication"
-20-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:7:9-40
+19-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:6:5-22:19
+20        android:name="app.nodx.NodxApplication"
+20-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:7:9-40
 21        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
 21-->[androidx.core:core:1.18.0] /home/sajad/.gradle/caches/9.3.1/transforms/bd26905da2a9ca9f3d5e869b1de8fb21/transformed/core-1.18.0/AndroidManifest.xml:28:18-86
 22        android:debuggable="true"
 23        android:extractNativeLibs="false"
 24        android:icon="@mipmap/ic_launcher"
-24-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:9:9-43
-25        android:label="Xero"
-25-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:8:9-29
+24-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:9:9-43
+25        android:label="nodx"
+25-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:8:9-29
 26        android:supportsRtl="true"
-26-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:11:9-35
-27        android:theme="@style/Theme.Xero" >
-27-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:10:9-42
+26-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:11:9-35
+27        android:theme="@style/Theme.Nodx" >
+27-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:10:9-42
 28        <activity
-28-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:13:9-21:20
-29            android:name="app.xero.xero.MainActivity"
-29-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:14:13-41
+28-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:13:9-21:20
+29            android:name="app.nodx.MainActivity"
+29-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:14:13-41
 30            android:exported="true"
-30-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:15:13-36
+30-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:15:13-36
 31            android:windowSoftInputMode="adjustResize" >
-31-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:16:13-55
+31-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:16:13-55
 32            <intent-filter>
-32-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:17:13-20:29
+32-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:17:13-20:29
 33                <action android:name="android.intent.action.MAIN" />
-33-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:18:17-69
-33-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:18:25-66
+33-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:18:17-69
+33-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:18:25-66
 34
 35                <category android:name="android.intent.category.LAUNCHER" />
-35-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:19:17-77
-35-->/home/sajad/xero-native/app/src/main/AndroidManifest.xml:19:27-74
+35-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:19:17-77
+35-->/home/sajad/nodx/app/src/main/AndroidManifest.xml:19:27-74
 36            </intent-filter>
 37        </activity>
 38        <activity
@@ -82,7 +82,7 @@
 49-->[androidx.emoji2:emoji2:1.4.0] /home/sajad/.gradle/caches/9.3.1/transforms/440c2e10570afdf81d5b0bfe99d4a580/transformed/emoji2-1.4.0/AndroidManifest.xml:24:9-32:20
 50            android:name="androidx.startup.InitializationProvider"
 50-->[androidx.emoji2:emoji2:1.4.0] /home/sajad/.gradle/caches/9.3.1/transforms/440c2e10570afdf81d5b0bfe99d4a580/transformed/emoji2-1.4.0/AndroidManifest.xml:25:13-67
-51            android:authorities="app.xero.xero.androidx-startup"
+51            android:authorities="app.nodx.androidx-startup"
 51-->[androidx.emoji2:emoji2:1.4.0] /home/sajad/.gradle/caches/9.3.1/transforms/440c2e10570afdf81d5b0bfe99d4a580/transformed/emoji2-1.4.0/AndroidManifest.xml:26:13-68
 52            android:exported="false" >
 52-->[androidx.emoji2:emoji2:1.4.0] /home/sajad/.gradle/caches/9.3.1/transforms/440c2e10570afdf81d5b0bfe99d4a580/transformed/emoji2-1.4.0/AndroidManifest.xml:27:13-37
