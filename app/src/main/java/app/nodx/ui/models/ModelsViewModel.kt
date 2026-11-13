@@ -54,23 +54,28 @@ class ModelsViewModel(private val container: AppContainer) : ViewModel() {
         }
         viewModelScope.launch {
             // Register finished downloads in the DB with parsed GGUF metadata.
+            // Parse off the main thread; a corrupt file must never crash the app.
             container.modelDownloader.states.collect { dl ->
                 dl.forEach { (id, st) ->
                     if (st is DownloadState.Done && !registered.contains(id)) {
                         registered.add(id)
                         val entry = container.catalog.models.firstOrNull { it.id == id }
                         if (entry != null) {
-                            val meta = GgufMetadata.read(st.path)
-                            container.chatRepository.upsertDownloadedModel(
-                                DownloadedModel(
-                                    id = entry.id,
-                                    filename = entry.filename,
-                                    sizeBytes = java.io.File(st.path).length(),
-                                    contextLength = meta?.contextLength,
-                                    chatTemplate = meta?.chatTemplate,
-                                    addedAt = System.currentTimeMillis(),
+                            val meta = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                runCatching { GgufMetadata.read(st.path) }.getOrNull()
+                            }
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                container.chatRepository.upsertDownloadedModel(
+                                    DownloadedModel(
+                                        id = entry.id,
+                                        filename = entry.filename,
+                                        sizeBytes = java.io.File(st.path).length(),
+                                        contextLength = meta?.contextLength,
+                                        chatTemplate = meta?.chatTemplate,
+                                        addedAt = System.currentTimeMillis(),
+                                    )
                                 )
-                            )
+                            }
                             refresh()
                         }
                     }

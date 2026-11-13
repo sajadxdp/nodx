@@ -29,6 +29,8 @@ object GgufMetadata {
         RandomAccessFile(File(path), "r").use { raf -> Reader(raf).read() }
     } catch (_: Exception) {
         null
+    } catch (_: OutOfMemoryError) {
+        null // corrupted header claimed an absurd size
     }
 
     private class Reader(private val raf: RandomAccessFile) {
@@ -98,7 +100,35 @@ object GgufMetadata {
 
         private fun string(): String {
             val len = u64().toInt()
+            // Guard against a misaligned read: a string longer than the file
+            // is always corruption, and ByteArray(len) would OOM.
+            if (len < 0 || len > raf.length()) throw EOFException("bad string length $len")
             return String(bytes(len), Charsets.UTF_8)
+        }
+
+        /** Skips [n] bytes without buffering them. */
+        private fun skip(n: Long) {
+            var remaining = n
+            while (remaining > 0) {
+                val s = raf.skipBytes(remaining.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                if (s <= 0) throw EOFException()
+                remaining -= s
+            }
+        }
+
+        /** Skips one array element tree of unknown width (type tag included). */
+        private fun skipArray() {
+            val elemType = u32().toInt()
+            val count = u64().toInt()
+            when (elemType) {
+                8 -> repeat(count) { string() }
+                0, 1 -> skip(count.toLong())
+                2, 3 -> skip(count * 2L)
+                4, 5, 6, 7 -> skip(count * 4L)
+                10, 11, 12 -> skip(count * 8L)
+                9 -> repeat(count) { skipArray() }
+                else -> throw EOFException("unknown element type $elemType")
+            }
         }
 
         /** GGUF value types per gguf.h. Returns Long for integers, Double for
@@ -121,11 +151,15 @@ object GgufMetadata {
                 val elemType = u32().toInt()
                 val count = u64().toInt()
                 when (elemType) {
-                    8 -> List(count) { string() }
-                    else -> { // skip non-string arrays by size
-                        repeat(count) { value() }
-                        null
-                    }
+                    8 -> List(count) { string() }       // string arrays kept
+                    // Fixed-width elements carry no per-element type tag:
+                    // skip by width or the stream misaligns.
+                    0, 1 -> skip(count.toLong())
+                    2, 3 -> skip(count * 2L)
+                    4, 5, 6, 7 -> skip(count * 4L)
+                    10, 11, 12 -> skip(count * 8L)
+                    9 -> repeat(count) { skipArray() }  // nested arrays
+                    else -> null
                 }
             }
             10 -> u64()                                  // UINT64

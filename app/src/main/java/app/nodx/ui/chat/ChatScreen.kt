@@ -168,7 +168,7 @@ private fun EmptyChat(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(top = 16.dp),
         )
         Text(
-            "Cloud engines stream from your provider.\nLocal GGUF lands in Phase 3.",
+            "Cloud engines stream from your provider.\nOr run local GGUF models on-device.",
             style = MaterialTheme.typography.bodyMedium,
             color = theme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp),

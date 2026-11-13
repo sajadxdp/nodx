@@ -113,7 +113,7 @@ fun SettingsScreen(container: AppContainer) {
                     Text(
                         when (s.engineMode) {
                             EngineModeSetting.CLOUD ->
-                                "Cloud — provider APIs. Local GGUF lands in Phase 3."
+                                "Cloud — provider APIs."
                             EngineModeSetting.LOCAL ->
                                 "Local — on-device GGUF. Load a model in Models first."
                         }

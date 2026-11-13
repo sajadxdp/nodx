@@ -140,4 +140,124 @@ class GgufMetadataTest {
         assertEquals(2048L, info.contextLength)
         assertEquals("template", info.chatTemplate)
     }
+
+    @Test
+    fun `fixed-width array is skipped by width not by tag`() {
+        // Regression: array elements carry no per-element type tag. Reading
+        // tags for each element misaligns the stream and produced a bogus
+        // string length (OOM crash on device with a real GGUF).
+        val f = writeGgufWithArray(
+            arrayType = 4, // UINT32 elements
+            count = 5,
+            following = listOf("llama.context_length" to 8192),
+        )
+        val info = GgufMetadata.read(f.absolutePath)
+
+        assertNotNull(info)
+        assertEquals(8192L, info!!.contextLength)
+    }
+
+    @Test
+    fun `string array elements are kept without tags`() {
+        val f = writeGgufWithStringArray(
+            strings = listOf("alpha", "beta"),
+            following = listOf("llama.context_length" to 1234),
+        )
+        val info = GgufMetadata.read(f.absolutePath)
+
+        assertNotNull(info)
+        assertEquals(1234L, info!!.contextLength)
+    }
+
+    /** Writes a GGUF v3 with one ARRAY kv then more KVs after it. */
+    private fun writeGgufWithArray(
+        arrayType: Int,
+        count: Int,
+        following: List<Pair<String, Any>>,
+    ): File {
+        val out = ByteArrayOutputStream()
+
+        fun u32(v: Long) = out.write(
+            ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(v.toInt()).array()
+        )
+
+        fun u64(v: Long) = out.write(
+            ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(v).array()
+        )
+
+        fun str(s: String) {
+            val b = s.toByteArray(Charsets.UTF_8)
+            u64(b.size.toLong())
+            out.write(b)
+        }
+
+        out.write("GGUF".toByteArray())
+        u32(3)
+        u64(1)
+        u64((1 + following.size).toLong())
+
+        str("tokenizer.ggml.tokens") // the array kv
+        u32(9)                       // ARRAY
+        u32(arrayType.toLong())      // element type
+        u64(count.toLong())
+        repeat(count) { u32(7) }     // element payloads only — no tags
+
+        for ((k, v) in following) {
+            str(k)
+            u32(4) // UINT32
+            when (v) {
+                is Int -> u32(v.toLong())
+                is Long -> u32(v)
+                else -> error("test only")
+            }
+        }
+
+        val f = File.createTempFile("arr", ".gguf")
+        FileOutputStream(f).use { it.write(out.toByteArray()) }
+        f.deleteOnExit()
+        return f
+    }
+
+    private fun writeGgufWithStringArray(
+        strings: List<String>,
+        following: List<Pair<String, Any>>,
+    ): File {
+        val out = ByteArrayOutputStream()
+
+        fun u32(v: Long) = out.write(
+            ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(v.toInt()).array()
+        )
+
+        fun u64(v: Long) = out.write(
+            ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(v).array()
+        )
+
+        fun str(s: String) {
+            val b = s.toByteArray(Charsets.UTF_8)
+            u64(b.size.toLong())
+            out.write(b)
+        }
+
+        out.write("GGUF".toByteArray())
+        u32(3)
+        u64(1)
+        u64((1 + following.size).toLong())
+
+        str("some.strings")
+        u32(9)                 // ARRAY
+        u32(8)                 // STRING elements
+        u64(strings.size.toLong())
+        strings.forEach { str(it) }
+
+        for ((k, v) in following) {
+            str(k)
+            u32(4)
+            u32((v as Number).toLong())
+        }
+
+        val f = File.createTempFile("sarr", ".gguf")
+        FileOutputStream(f).use { it.write(out.toByteArray()) }
+        f.deleteOnExit()
+        return f
+    }
 }

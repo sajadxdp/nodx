@@ -11,9 +11,9 @@ android {
         minSdk = 28 // Vulkan 1.1 symbols required by the CPU/GPU backends
 
         ndk {
-            // arm64: full build (CPU variants + Vulkan). armeabi-v7a: plain
-            // CPU build for phones running 32-bit Android.
-            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+            // arm64: full build (CPU variants). armeabi-v7a: plain CPU build
+            // for 32-bit phones. x86_64: CPU build for emulator testing.
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64"))
         }
 
         externalNativeBuild {
