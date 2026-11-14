@@ -680,7 +680,6 @@ drawable ic_call_answer_video_low
 drawable ic_call_decline
 drawable ic_call_decline_low
 drawable ic_launcher_background
-drawable ic_launcher_foreground
 drawable nodx_logo
 drawable notification_action_background
 drawable notification_bg
@@ -978,6 +977,7 @@ layout support_simple_spinner_dropdown_item
 mipmap ic_launcher
 mipmap ic_launcher_foreground
 mipmap ic_launcher_mono
+mipmap ic_launcher_round
 string abc_action_bar_home_description
 string abc_action_bar_up_description
 string abc_action_menu_overflow_description

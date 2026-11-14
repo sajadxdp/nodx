@@ -35,6 +35,7 @@ import app.nodx.ui.theme.NodxTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -48,6 +49,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val container = (application as NodxApplication).container
+        // Block once on the stored appearance so the first composed frame
+        // matches the user's theme (DataStore's async first emission would
+        // otherwise paint one frame of the DARK default for light users).
+        val initial = kotlinx.coroutines.runBlocking { container.settings.settings.first() }
+        appearance.value = initial.theme
+        dynamicColor.value = initial.dynamicColor
         lifecycleScope.launch {
             container.settings.settings.collect { s ->
                 appearance.value = s.theme
@@ -64,7 +71,7 @@ class MainActivity : ComponentActivity() {
                 ThemeSetting.SYSTEM -> isSystemInDarkTheme()
             }
             NodxTheme(darkTheme = dark, dynamicColor = dynamic) {
-                XeroNav(container)
+                NodxNav(container)
             }
         }
     }
@@ -77,7 +84,7 @@ private data class Destination(
 )
 
 @Composable
-private fun XeroNav(container: AppContainer) {
+private fun NodxNav(container: AppContainer) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route

@@ -129,10 +129,12 @@ class ChatViewModel(
             if (finalMsg.content.isNotEmpty() || finalMsg.error != null) {
                 repo.insertMessage(finalMsg)
             }
-            _state.value = _state.value.copy(
-                messages = _state.value.messages.filter { it.id != LIVE_ID } + finalMsg,
-                isGenerating = false,
-            )
+            if (_state.value.sessionId == sessionId) {
+                _state.value = _state.value.copy(
+                    messages = _state.value.messages.filter { it.id != LIVE_ID } + finalMsg,
+                    isGenerating = false,
+                )
+            }
         }
     }
 
@@ -210,21 +212,32 @@ class ChatViewModel(
             if (finalMsg.content.isNotEmpty() || finalMsg.error != null) {
                 repo.insertMessage(finalMsg)
             }
-            _state.value = _state.value.copy(
-                messages = _state.value.messages.filter { it.id != LIVE_ID } + finalMsg,
-                isGenerating = false,
-            )
+            if (_state.value.sessionId == sessionId) {
+                _state.value = _state.value.copy(
+                    messages = _state.value.messages.filter { it.id != LIVE_ID } + finalMsg,
+                    isGenerating = false,
+                )
+            }
         }
     }
 
     fun newSession() {
-        genJob?.cancel()
+        // Same wind-down as stop(): let the running generation finish its
+        // final insert (the partial reply stays in the old session), and the
+        // finish block skips its state update because the session id changed.
+        viewModelScope.launch { container.localEngine.cancel() }
+        container.cloudEngine.cancel()
         _state.value = ChatUiState()
     }
 
     fun openSession(id: String) {
-        genJob?.cancel()
         viewModelScope.launch {
+            // Wind down any running generation first so its partial reply is
+            // persisted, then load the transcript — otherwise the fresh load
+            // can race the final insert.
+            container.localEngine.cancel()
+            container.cloudEngine.cancel()
+            genJob?.join()
             val msgs = repo.messages(id)
             val session = repo.sessions().firstOrNull { it.id == id }
             _state.value = ChatUiState(
@@ -261,10 +274,15 @@ class ChatViewModel(
             content = "",
             error = message,
         )
-        _state.value = _state.value.copy(
-            messages = _state.value.messages + finalMsg,
-            isGenerating = false,
-        )
+        viewModelScope.launch {
+            repo.insertMessage(finalMsg)
+            if (_state.value.sessionId == sessionId) {
+                _state.value = _state.value.copy(
+                    messages = _state.value.messages.filter { it.id != LIVE_ID } + finalMsg,
+                    isGenerating = false,
+                )
+            }
+        }
     }
 
     /** Assistant bubble streaming in progress: replace or append the live one. */

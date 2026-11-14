@@ -28,6 +28,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -114,6 +115,10 @@ fun SessionsScreen(
     val sessions by vm.sessions.collectAsState()
     val pendingDelete by vm.pendingDelete.collectAsState()
     val pendingRename by vm.pendingRename.collectAsState()
+    // The nav graph saves/restores this back-stack entry (its ViewModel
+    // survives), so a one-shot init load goes stale: refresh on every
+    // entry to the screen so new/renamed chats show up immediately.
+    LaunchedEffect(Unit) { vm.refresh() }
     val theme = MaterialTheme.colorScheme
 
     pendingDelete?.let { doomed ->

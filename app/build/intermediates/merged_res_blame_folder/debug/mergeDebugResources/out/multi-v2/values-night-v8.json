@@ -6,47 +6,6 @@
                 {
                     "source": "/home/sajad/.gradle/caches/9.3.1/transforms/327b8c33258812cb12dad8b631d63b82/transformed/appcompat-1.7.1/res/values-night-v8/values-night-v8.xml",
                     "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,125,209,293,389,491,593,687",
-                        "endColumns": "69,83,83,95,101,101,93,88",
-                        "endOffsets": "120,204,288,384,486,588,682,771"
-                    },
-                    "to": {
-                        "startLines": "2,3,4,5,6,7,8,12",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,125,209,293,389,491,593,835",
-                        "endColumns": "69,83,83,95,101,101,93,88",
-                        "endOffsets": "120,204,288,384,486,588,682,919"
-                    }
-                },
-                {
-                    "source": "/home/sajad/nodx/app/src/main/res/values-night/themes.xml",
-                    "from": {
-                        "startLines": "2",
-                        "startColumns": "4",
-                        "startOffsets": "55",
-                        "endLines": "4",
-                        "endColumns": "12",
-                        "endOffsets": "198"
-                    },
-                    "to": {
-                        "startLines": "9",
-                        "startColumns": "4",
-                        "startOffsets": "687",
-                        "endLines": "11",
-                        "endColumns": "12",
-                        "endOffsets": "830"
-                    }
-                }
-            ]
-        },
-        {
-            "outputFile": "app.nodx.app-mergeDebugResources-43:/values-night-v8/values-night-v8.xml",
-            "map": [
-                {
-                    "source": "/home/sajad/.gradle/caches/9.3.1/transforms/327b8c33258812cb12dad8b631d63b82/transformed/appcompat-1.7.1/res/values-night-v8/values-night-v8.xml",
-                    "from": {
                         "startLines": "-1,-1,-1,-1,-1,-1,-1,-1",
                         "startColumns": "-1,-1,-1,-1,-1,-1,-1,-1",
                         "startOffsets": "-1,-1,-1,-1,-1,-1,-1,-1"
@@ -76,6 +35,44 @@
                         "endLines": "12",
                         "endColumns": "12",
                         "endOffsets": "925"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "app.nodx.app-mergeDebugResources-43:/values-night-v8/values-night-v8.xml",
+            "map": [
+                {
+                    "source": "/home/sajad/.gradle/caches/9.3.1/transforms/327b8c33258812cb12dad8b631d63b82/transformed/appcompat-1.7.1/res/values-night-v8/values-night-v8.xml",
+                    "from": {
+                        "startLines": "-1,-1,-1,-1,-1,-1,-1,-1",
+                        "startColumns": "-1,-1,-1,-1,-1,-1,-1,-1",
+                        "startOffsets": "-1,-1,-1,-1,-1,-1,-1,-1"
+                    },
+                    "to": {
+                        "startLines": "3,4,5,6,7,8,9,14",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "107,177,261,345,441,543,645,982",
+                        "endColumns": "69,83,83,95,101,101,93,88",
+                        "endOffsets": "172,256,340,436,538,640,734,1066"
+                    }
+                },
+                {
+                    "source": "/home/sajad/nodx/app/src/main/res/values-night/themes.xml",
+                    "from": {
+                        "startLines": "3,-1",
+                        "startColumns": "4,-1",
+                        "startOffsets": "137,-1",
+                        "endColumns": "51,-1",
+                        "endOffsets": "184,-1"
+                    },
+                    "to": {
+                        "startLines": "2,10",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,739",
+                        "endLines": "2,13",
+                        "endColumns": "51,12",
+                        "endOffsets": "102,977"
                     }
                 }
             ]

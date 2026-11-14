@@ -18,7 +18,8 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Badge
+
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -78,7 +79,7 @@ fun ModelsScreen(container: AppContainer) {
             if (state.deviceInfo.isNotBlank()) {
                 item {
                     Text(
-                        "Device: ${state.deviceInfo} — models up to " +
+                        "Your device: ${state.deviceInfo} — models up to " +
                             "%.1f GB".format(container.deviceProfile.maxModelGb),
                         style = MaterialTheme.typography.bodySmall,
                         color = theme.onSurfaceVariant,
@@ -229,11 +230,11 @@ private fun CatalogModelCard(
             }
             Row(
                 Modifier.padding(top = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                AssistChip(onClick = {}, label = { Text(model.quant) })
-                AssistChip(onClick = {}, label = { Text("%.1f GB".format(model.sizeBytes / 1e9)) })
-                AssistChip(onClick = {}, label = { Text("≥ ${model.minRamGb} GB RAM") })
+                Badge(model.quant)
+                Badge("%.1f GB".format(model.sizeBytes / 1e9))
+                Badge("≥ ${model.minRamGb} GB RAM")
             }
             when (state) {
                 is DownloadState.Downloading -> {
@@ -268,5 +269,17 @@ private fun CatalogModelCard(
                 else -> Spacer(Modifier.height(8.dp))
             }
         }
+    }
+}
+
+/** Non-interactive spec badge (quant, size, RAM floor). Replaces AssistChip:
+ * these carry no action, so a tap target would be a lie. */
+@Composable
+private fun Badge(text: String) {
+    androidx.compose.material3.Badge(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    ) {
+        Text(text, style = MaterialTheme.typography.labelSmall)
     }
 }

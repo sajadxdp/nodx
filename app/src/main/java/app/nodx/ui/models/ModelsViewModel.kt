@@ -42,7 +42,9 @@ class ModelsViewModel(private val container: AppContainer) : ViewModel() {
                     container.deviceProfile.maxModelGb + 2.0,
                 ),
                 downloaded = container.chatRepository.downloadedModels(),
-                deviceInfo = container.deviceProfile.toString(),
+                deviceInfo = container.deviceProfile.run {
+                    "${tier.label} tier · ${"%.1f".format(totalRamGb)} GB RAM"
+                },
             )
         }
     }

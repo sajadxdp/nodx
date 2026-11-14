@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="launch_background">#0A0B10</color>
     <style name="Theme.Nodx" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/launch_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

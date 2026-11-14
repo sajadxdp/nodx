@@ -11,12 +11,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -87,10 +88,13 @@ fun ChatScreen(container: AppContainer) {
         }
     }
 
-    // Auto-scroll to the newest content while generating or appending.
+    // Keep the view pinned to the newest content while streaming — but only
+    // when the user is already at the bottom, so scrolling up during a long
+    // reply isn't fought by the auto-scroll. Jump (not animate) so per-token
+    // recompositions don't restart animations.
     LaunchedEffect(state.messages.size, state.messages.lastOrNull()?.content) {
-        if (state.messages.isNotEmpty()) {
-            listState.animateScrollToItem(state.messages.lastIndex)
+        if (state.messages.isNotEmpty() && !listState.canScrollForward) {
+            listState.scrollToItem(state.messages.lastIndex)
         }
     }
 
@@ -144,6 +148,7 @@ fun ChatScreen(container: AppContainer) {
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .consumeWindowInsets(padding)
                 .imePadding(),
         ) {
             if (state.messages.isEmpty()) {
@@ -160,8 +165,17 @@ fun ChatScreen(container: AppContainer) {
                         vertical = 8.dp,
                     ),
                 ) {
-                    items(state.messages, key = { it.id }) { message ->
-                        ChatBubble(message, onRetry = vm::regenerate)
+                    itemsIndexed(state.messages, key = { _, m -> m.id }) { index, message ->
+                        ChatBubble(
+                            message = message,
+                            // Retry belongs to the last bubble only —
+                            // regenerate() drops the last assistant message,
+                            // so a Retry on an older error bubble would
+                            // delete the wrong one.
+                            canRetry = message.error != null &&
+                                index == state.messages.lastIndex,
+                            onRetry = vm::regenerate,
+                        )
                     }
                 }
             }
@@ -169,7 +183,9 @@ fun ChatScreen(container: AppContainer) {
             Composer(
                 value = text,
                 onValueChange = { text = it },
-                enabled = !state.isGenerating,
+                // Keep the field draftable while a reply streams; only the
+                // send button gates on generation state.
+                canSend = !state.isGenerating,
                 onSend = {
                     vm.send(text)
                     text = ""
@@ -211,7 +227,11 @@ private fun EmptyChat(modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ChatBubble(message: ChatMessage, onRetry: () -> Unit = {}) {
+fun ChatBubble(
+    message: ChatMessage,
+    canRetry: Boolean = true,
+    onRetry: () -> Unit = {},
+) {
     val theme = MaterialTheme.colorScheme
     val clipboard = LocalClipboardManager.current
     val isUser = message.role == MessageRole.USER
@@ -252,7 +272,7 @@ fun ChatBubble(message: ChatMessage, onRetry: () -> Unit = {}) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                 if (hasError) {
                     Text("⚠ ${message.error}", style = MaterialTheme.typography.bodyMedium)
-                    if (!isUser) {
+                    if (!isUser && canRetry) {
                         TextButton(onClick = onRetry) { Text("Retry") }
                     }
                 } else if (message.content.isEmpty() && !isUser) {
@@ -271,9 +291,9 @@ fun ChatBubble(message: ChatMessage, onRetry: () -> Unit = {}) {
                                         style = MaterialTheme.typography.bodyLarge,
                                     )
                                     is Segment.Code -> Surface(
-                                        color = theme.surface.copy(alpha = 0.6f),
+                                        color = theme.surfaceContainerHighest,
                                         contentColor = content,
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = MaterialTheme.shapes.small,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp),
@@ -302,7 +322,7 @@ fun ChatBubble(message: ChatMessage, onRetry: () -> Unit = {}) {
 private fun Composer(
     value: String,
     onValueChange: (String) -> Unit,
-    enabled: Boolean,
+    canSend: Boolean,
     onSend: () -> Unit,
 ) {
     Row(
@@ -316,7 +336,7 @@ private fun Composer(
             onValueChange = onValueChange,
             modifier = Modifier.weight(1f),
             placeholder = { Text("Message…") },
-            shape = RoundedCornerShape(24.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             minLines = 1,
             maxLines = 5,
             colors = TextFieldDefaults.colors(
@@ -325,10 +345,10 @@ private fun Composer(
                 disabledIndicatorColor = Color.Transparent,
             ),
         )
-        val canSend = enabled && value.isNotBlank()
+        val sendable = canSend && value.isNotBlank()
         FilledIconButton(
-            onClick = { if (canSend) onSend() },
-            enabled = canSend,
+            onClick = { if (sendable) onSend() },
+            enabled = sendable,
             modifier = Modifier.padding(start = 8.dp),
             colors = IconButtonDefaults.filledIconButtonColors(
                 containerColor = MaterialTheme.colorScheme.primary,

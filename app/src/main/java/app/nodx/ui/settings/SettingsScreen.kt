@@ -1,8 +1,10 @@
 package app.nodx.ui.settings
 
 import android.os.Build
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -28,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,8 +85,10 @@ fun SettingsScreen(container: AppContainer) {
         val s = settings ?: return@Scaffold
         Column(
             Modifier
+                .padding(padding)
+                .consumeWindowInsets(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(padding),
+                .imePadding(),
         ) {
             SectionHeader("Appearance")
             var pendingTheme by remember(s.theme) { mutableStateOf(s.theme) }
