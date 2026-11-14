@@ -39,8 +39,9 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    /** Live theme from DataStore, applied app-wide. */
+    /** Live appearance from DataStore, applied app-wide. */
     private val appearance = MutableStateFlow(ThemeSetting.DARK)
+    private val dynamicColor = MutableStateFlow(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,17 +51,19 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             container.settings.settings.collect { s ->
                 appearance.value = s.theme
+                dynamicColor.value = s.dynamicColor
             }
         }
 
         setContent {
             val themeSetting by appearance.collectAsState()
+            val dynamic by dynamicColor.collectAsState()
             val dark = when (themeSetting) {
                 ThemeSetting.LIGHT -> false
                 ThemeSetting.DARK -> true
                 ThemeSetting.SYSTEM -> isSystemInDarkTheme()
             }
-            NodxTheme(darkTheme = dark) {
+            NodxTheme(darkTheme = dark, dynamicColor = dynamic) {
                 XeroNav(container)
             }
         }

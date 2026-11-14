@@ -2,7 +2,9 @@ package app.nodx.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -10,51 +12,79 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
-private val Teal = Color(0xFF0EA5A0)
-private val TealDark = Color(0xFF0B7C78)
+/*
+ * Brand palette, sampled from the nodx logo tile:
+ *   tile gradient  #17171F → #07080D  (violet-tinted near-black)
+ *   glyph white    #F4F4F6
+ *   accent         #883DEA (bright edge #B073F5)
+ */
+
+private val Accent = Color(0xFF883DEA)
+private val AccentBright = Color(0xFFB073F5)
+private val AccentDeep = Color(0xFF6C28C9)
+private val TileTop = Color(0xFF17171F)
+private val TileBottom = Color(0xFF0A0B10)
+private val GlyphWhite = Color(0xFFF4F4F6)
 
 private val LightColors = lightColorScheme(
-    primary = Teal,
+    primary = AccentDeep,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFB8ECE9),
-    onPrimaryContainer = Color(0xFF00201E),
-    secondary = Color(0xFF4A6360),
-    secondaryContainer = Color(0xFFCCE8E4),
-    tertiary = Color(0xFF5A5B7B),
-    surface = Color(0xFFF6FBF9),
-    onSurface = Color(0xFF171D1C),
-    surfaceVariant = Color(0xFFDAE4E2),
-    onSurfaceVariant = Color(0xFF3F4947),
-    surfaceContainerHigh = Color(0xFFE7EDEB),
+    primaryContainer = Color(0xFFEFDBFF),
+    onPrimaryContainer = Color(0xFF28005E),
+    secondary = Color(0xFF625582),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE9DEFF),
+    onSecondaryContainer = Color(0xFF1D1140),
+    tertiary = Color(0xFF7B5266),
+    surface = Color(0xFFFDF9FE),
+    onSurface = Color(0xFF1C1B1E),
+    surfaceVariant = Color(0xFFE8E0EB),
+    onSurfaceVariant = Color(0xFF4A454E),
+    surfaceContainerHigh = Color(0xFFF2ECF4),
+    outline = Color(0xFF7B7580),
     error = Color(0xFFBA1A1A),
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF410002),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF5ADBD4),
-    onPrimary = Color(0xFF003733),
-    primaryContainer = Color(0xFF00504B),
-    onPrimaryContainer = Color(0xFFB8ECE9),
-    secondary = Color(0xFFB0CCC8),
-    secondaryContainer = Color(0xFF324B48),
-    tertiary = Color(0xFFC2C3EE),
-    surface = Color(0xFF101413),
-    onSurface = Color(0xFFDDE4E1),
-    surfaceVariant = Color(0xFF3F4947),
-    onSurfaceVariant = Color(0xFFBEC9C6),
-    surfaceContainerHigh = Color(0xFF262B2A),
+    primary = AccentBright,
+    onPrimary = Color(0xFF2A0064),
+    primaryContainer = Color(0xFF4C1DA6),
+    onPrimaryContainer = Color(0xFFEFDBFF),
+    secondary = Color(0xFFCFC2EA),
+    onSecondary = Color(0xFF35275A),
+    secondaryContainer = Color(0xFF4C3D71),
+    onSecondaryContainer = Color(0xFFE9DEFF),
+    tertiary = Color(0xFFECB8CE),
+    surface = TileBottom,
+    onSurface = Color(0xFFE5E1E9),
+    surfaceVariant = Color(0xFF2A2830),
+    onSurfaceVariant = Color(0xFFCAC4CF),
+    surfaceContainerHigh = TileTop,
+    outline = Color(0xFF95909B),
     error = Color(0xFFFFB4AB),
     errorContainer = Color(0xFF93000A),
     onErrorContainer = Color(0xFFFFDAD6),
 )
 
-/** Material 3 theming: dynamic color on Android 12+, Xero teal otherwise. */
+/** The logo's chiseled geometry: tighter radii than Material defaults. */
+private val NodxShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(18.dp),
+    extraLarge = RoundedCornerShape(24.dp),
+)
+
+/** Material 3 theming. Default: brand (logo) scheme. Dynamic color —
+ * wallpaper-derived Material You — is an explicit opt-in in Settings. */
 @Composable
 fun NodxTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -67,6 +97,7 @@ fun NodxTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = androidx.compose.material3.Typography(),
+        shapes = NodxShapes,
         content = content,
     )
 }

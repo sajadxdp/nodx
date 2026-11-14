@@ -1,5 +1,6 @@
 package app.nodx.ui.settings
 
+import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -103,6 +105,24 @@ fun SettingsScreen(container: AppContainer) {
                             ) { Text(mode.label) }
                         }
                     }
+                },
+            )
+            ListItem(
+                headlineContent = { Text("Dynamic color") },
+                supportingContent = {
+                    Text(
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                            "Material You — derive colors from your wallpaper"
+                        else
+                            "Requires Android 12 or newer"
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = s.dynamicColor,
+                        enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+                        onCheckedChange = { scope.launch { store.setDynamicColor(it) } },
+                    )
                 },
             )
 

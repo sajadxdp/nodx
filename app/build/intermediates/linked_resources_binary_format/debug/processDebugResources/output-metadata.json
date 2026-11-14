@@ -11,35 +11,9 @@
       "type": "UNIVERSAL",
       "filters": [],
       "attributes": [],
-      "versionCode": 1,
-      "versionName": "0.1.0",
+      "versionCode": 2,
+      "versionName": "0.2.0",
       "outputFile": "linked-resources-binary-format-universalDebug.ap_"
-    },
-    {
-      "type": "ONE_OF_MANY",
-      "filters": [
-        {
-          "filterType": "ABI",
-          "value": "armeabi-v7a"
-        }
-      ],
-      "attributes": [],
-      "versionCode": 1,
-      "versionName": "0.1.0",
-      "outputFile": "linked-resources-binary-format-armeabi-v7aDebug.ap_"
-    },
-    {
-      "type": "ONE_OF_MANY",
-      "filters": [
-        {
-          "filterType": "ABI",
-          "value": "arm64-v8a"
-        }
-      ],
-      "attributes": [],
-      "versionCode": 1,
-      "versionName": "0.1.0",
-      "outputFile": "linked-resources-binary-format-arm64-v8aDebug.ap_"
     },
     {
       "type": "ONE_OF_MANY",
@@ -50,9 +24,35 @@
         }
       ],
       "attributes": [],
-      "versionCode": 1,
-      "versionName": "0.1.0",
+      "versionCode": 2,
+      "versionName": "0.2.0",
       "outputFile": "linked-resources-binary-format-x86_64Debug.ap_"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "arm64-v8a"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 2,
+      "versionName": "0.2.0",
+      "outputFile": "linked-resources-binary-format-arm64-v8aDebug.ap_"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "armeabi-v7a"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 2,
+      "versionName": "0.2.0",
+      "outputFile": "linked-resources-binary-format-armeabi-v7aDebug.ap_"
     }
   ],
   "elementType": "File"

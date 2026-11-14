@@ -3,6 +3,7 @@ package app.nodx.ui.chat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +20,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Refresh
@@ -49,11 +49,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.nodx.AppContainer
+import app.nodx.R
 import app.nodx.domain.ChatMessage
 import app.nodx.domain.MessageRole
 import app.nodx.ui.vmFactory
@@ -101,7 +104,7 @@ fun ChatScreen(container: AppContainer) {
                             val label = if (state.engineLabel.isNotBlank()) "${state.engineLabel} · " else ""
                             Text(
                                 "$label${"%.0f".format(stats.tokensPerSecond)} tok/s · ${stats.contextUsed}/${stats.contextTotal} ctx",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -184,21 +187,23 @@ private fun EmptyChat(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(
-            Icons.AutoMirrored.Filled.Chat,
-            contentDescription = null,
-            tint = theme.primary,
-            modifier = Modifier.size(56.dp),
+        Image(
+            painter = painterResource(R.drawable.nodx_logo),
+            contentDescription = "nodx",
+            modifier = Modifier
+                .size(96.dp)
+                .clip(MaterialTheme.shapes.extraLarge),
         )
         Text(
-            "Start a conversation",
+            "Your models, your device",
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier.padding(top = 20.dp),
         )
         Text(
-            "Cloud engines stream from your provider.\nOr run local GGUF models on-device.",
+            "Stream from a cloud provider,\nor run local GGUF models on-device.",
             style = MaterialTheme.typography.bodyMedium,
             color = theme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp),
         )
     }

@@ -11,8 +11,8 @@
       "type": "UNIVERSAL",
       "filters": [],
       "attributes": [],
-      "versionCode": 1,
-      "versionName": "0.1.0",
+      "versionCode": 2,
+      "versionName": "0.2.0",
       "outputFile": "universal/AndroidManifest.xml"
     },
     {
@@ -24,8 +24,8 @@
         }
       ],
       "attributes": [],
-      "versionCode": 1,
-      "versionName": "0.1.0",
+      "versionCode": 2,
+      "versionName": "0.2.0",
       "outputFile": "armeabi-v7a/AndroidManifest.xml"
     },
     {
@@ -37,8 +37,8 @@
         }
       ],
       "attributes": [],
-      "versionCode": 1,
-      "versionName": "0.1.0",
+      "versionCode": 2,
+      "versionName": "0.2.0",
       "outputFile": "x86_64/AndroidManifest.xml"
     },
     {
@@ -50,8 +50,8 @@
         }
       ],
       "attributes": [],
-      "versionCode": 1,
-      "versionName": "0.1.0",
+      "versionCode": 2,
+      "versionName": "0.2.0",
       "outputFile": "arm64-v8a/AndroidManifest.xml"
     }
   ],

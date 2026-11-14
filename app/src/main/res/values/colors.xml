@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#0EA5A0</color>
+    <!-- Brand dark surface (nodx logo tile bottom); launch background so the
+         app opens without a flash. values-night mirrors it for SYSTEM+dark. -->
+    <color name="launch_background">#0A0B10</color>
 </resources>

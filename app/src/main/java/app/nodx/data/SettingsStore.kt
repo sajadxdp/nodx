@@ -1,6 +1,7 @@
 package app.nodx.data
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -33,6 +34,7 @@ data class Settings(
     val apiKey: String = "",
     val model: String = Provider.OPENAI.defaultModel,
     val theme: ThemeSetting = ThemeSetting.DARK,
+    val dynamicColor: Boolean = false,
     val engineMode: EngineModeSetting = EngineModeSetting.CLOUD,
     val systemPrompt: String = "",
     val temperature: Double = 0.7,
@@ -49,6 +51,7 @@ class SettingsStore(private val context: Context) {
         val apiKey = stringPreferencesKey("api_key")
         val model = stringPreferencesKey("model")
         val theme = stringPreferencesKey("theme")
+        val dynamicColor = booleanPreferencesKey("dynamic_color")
         val engineMode = stringPreferencesKey("engine_mode")
         val systemPrompt = stringPreferencesKey("system_prompt")
         val temperature = stringPreferencesKey("temperature")
@@ -65,6 +68,7 @@ class SettingsStore(private val context: Context) {
             apiKey = p[Keys.apiKey] ?: "",
             model = p[Keys.model] ?: provider.defaultModel,
             theme = p[Keys.theme]?.let { ThemeSetting.valueOf(it) } ?: ThemeSetting.DARK,
+            dynamicColor = p[Keys.dynamicColor] ?: false,
             engineMode = p[Keys.engineMode]?.let { EngineModeSetting.valueOf(it) }
                 ?: EngineModeSetting.CLOUD,
             systemPrompt = p[Keys.systemPrompt] ?: "",
@@ -87,6 +91,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setApiKey(key: String) = context.dataStore.edit { it[Keys.apiKey] = key.trim() }
     suspend fun setModel(model: String) = context.dataStore.edit { it[Keys.model] = model.trim() }
     suspend fun setTheme(theme: ThemeSetting) = context.dataStore.edit { it[Keys.theme] = theme.name }
+    suspend fun setDynamicColor(on: Boolean) = context.dataStore.edit { it[Keys.dynamicColor] = on }
     suspend fun setEngineMode(mode: EngineModeSetting) =
         context.dataStore.edit { it[Keys.engineMode] = mode.name }
 

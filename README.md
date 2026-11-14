@@ -89,6 +89,15 @@ filtered), tap **Load**, and switch **Engine mode → Local**.
 
 [PrivateLM]: https://github.com/orailnoor/cross-platform-llm-client
 
+## Brand
+
+The identity comes from the logo: a violet-tinted near-black tile with a
+chiseled white **N** and a violet accent (`#883DEA`). The app ships with that
+scheme as its default theme — dark surfaces step down from `#17171F` to
+`#0A0B10`, the accent drives primaries in both light and dark. Material You
+(wallpaper-derived) dynamic color is available as an opt-in in
+**Settings → Appearance → Dynamic color** (Android 12+).
+
 ## Release
 
 Releases are signed APKs published on [GitHub Releases](https://github.com/sajadxdp/nodx/releases).

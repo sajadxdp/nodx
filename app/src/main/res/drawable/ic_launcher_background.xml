@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher tile background sampled from the nodx logo tile:
+     violet-tinted near-black gradient, top #17171f to bottom #07080d. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:type="linear"
+        android:angle="270"
+        android:startColor="#17171F"
+        android:endColor="#07080D" />
+</shape>

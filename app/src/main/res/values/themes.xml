@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.Nodx" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@android:color/white</item>
+        <!-- Brand tile color: matches the default dark theme's first frame. -->
+        <item name="android:windowBackground">@color/launch_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 </resources>
