@@ -5,7 +5,9 @@ import app.nodx.domain.EngineStats
 import app.nodx.domain.GenerateRequest
 import app.nodx.domain.LoadRequest
 import app.nodx.domain.TokenEvent
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 
 /** Providers that speak one of the three streaming protocols. */
@@ -43,27 +45,32 @@ class CloudEngine(private val http: OkHttpClient) : ChatEngine {
         val active = http.newCall(adapter.buildRequest(cfg, request, http))
         call = active
         try {
-            active.execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    val errBody = resp.body?.string().orEmpty()
-                    send(
-                        TokenEvent.Failed(
-                            RuntimeException("HTTP ${resp.code}: ${adapter.parseError(errBody)}")
+            // channelFlow runs in the collector's context — Main. The call
+            // and the SSE read loop must leave it or every cloud request
+            // would fail with NetworkOnMainThreadException.
+            withContext(Dispatchers.IO) {
+                active.execute().use { resp ->
+                    if (!resp.isSuccessful) {
+                        val errBody = resp.body?.string().orEmpty()
+                        send(
+                            TokenEvent.Failed(
+                                RuntimeException("HTTP ${resp.code}: ${adapter.parseError(errBody)}")
+                            )
                         )
-                    )
-                    return@use
+                        return@withContext
+                    }
+                    val source = resp.body?.source() ?: run {
+                        send(TokenEvent.Failed(RuntimeException("Empty response body")))
+                        return@withContext
+                    }
+                    while (true) {
+                        val line = source.readUtf8Line() ?: break
+                        if (!line.startsWith("data:")) continue
+                        adapter.parseDelta(line)?.let { send(TokenEvent.Delta(it)) }
+                        if (adapter.isDone(line)) break
+                    }
+                    send(TokenEvent.Done())
                 }
-                val source = resp.body?.source() ?: run {
-                    send(TokenEvent.Failed(RuntimeException("Empty response body")))
-                    return@use
-                }
-                while (true) {
-                    val line = source.readUtf8Line() ?: break
-                    if (!line.startsWith("data:")) continue
-                    adapter.parseDelta(line)?.let { send(TokenEvent.Delta(it)) }
-                    if (adapter.isDone(line)) break
-                }
-                send(TokenEvent.Done())
             }
         } catch (e: java.io.IOException) {
             if (!active.isCanceled()) send(TokenEvent.Failed(e))

@@ -121,19 +121,34 @@ class ModelsViewModel(private val container: AppContainer) : ViewModel() {
         }
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoadingModel = true, loadProgress = 0.0, error = null)
+            var progressJob: kotlinx.coroutines.Job? = null
             try {
-                engine.load(
-                    LoadRequest.Local(
-                        modelPath = container.modelDownloader.pathFor(model.filename).absolutePath,
-                        contextLength = 0, // engine picks from metadata + device tier
+                // engine.load blocks a worker thread for the whole load —
+                // keep it off the main dispatcher, and render loadProgress
+                // (a volatile the native callback updates) with a ticker.
+                progressJob = launch(kotlinx.coroutines.Dispatchers.Default) {
+                    while (true) {
+                        _state.value = _state.value.copy(loadProgress = engine.loadProgress)
+                        kotlinx.coroutines.delay(120)
+                    }
+                }
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    engine.load(
+                        LoadRequest.Local(
+                            modelPath = container.modelDownloader.pathFor(model.filename).absolutePath,
+                            contextLength = 0, // engine picks from metadata + device tier
+                        )
                     )
-                )
+                }
+                progressJob.cancel()
                 _state.value = _state.value.copy(
                     loadedPath = engine.loadedModelPath,
                     isLoadingModel = false,
+                    loadProgress = 1.0,
                 )
                 if (engine.isReady) useInChat()
             } catch (e: Exception) {
+                progressJob?.cancel()
                 _state.value = _state.value.copy(
                     isLoadingModel = false,
                     error = e.message ?: e.toString(),

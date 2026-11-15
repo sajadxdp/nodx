@@ -40,7 +40,9 @@ class ModelDownloader(
     private val _states = MutableStateFlow<Map<String, DownloadState>>(emptyMap())
     val states: StateFlow<Map<String, DownloadState>> = _states.asStateFlow()
 
-    @Volatile private var paused = mutableSetOf<String>()
+    // Touched from the UI thread (pause) and the IO download loop — must
+    // be a concurrent set, not a plain HashSet behind @Volatile.
+    private val paused: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
 
     val modelsDir: File
         get() = File(context.filesDir, "models").apply { mkdirs() }
@@ -113,6 +115,17 @@ class ModelDownloader(
                 if (part.length() < 1024 * 1024) { // < 1 MB is never a real model
                     part.delete()
                     fail(model.id, "Downloaded file too small — broken link?")
+                    return@withContext
+                }
+                // A clean EOF can still be a truncated body (server closed
+                // early). Never finalize an incomplete file — it would load
+                // as corrupt GGUF. Keep the .part so the next attempt resumes.
+                if (total > 0 && part.length() != total) {
+                    fail(
+                        model.id,
+                        "Incomplete download — got %.1f of %.1f MB. Tap Download to resume."
+                            .format(part.length() / 1e6, total / 1e6),
+                    )
                     return@withContext
                 }
                 if (!part.renameTo(dest)) {

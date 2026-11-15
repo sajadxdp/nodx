@@ -11,6 +11,7 @@ import com.write4me.llama_flutter_android.ChatTemplateManager
 import com.write4me.llama_flutter_android.LlamaFlutterAndroidPlugin as Bridge
 import com.write4me.llama_flutter_android.TemplateChatMessage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.sync.Mutex
@@ -38,6 +39,15 @@ class LlamaCppEngine(private val context: Context) : ChatEngine {
     @Volatile private var loadedPath: String? = null
     @Volatile private var tokensThisGeneration = 0
     @Volatile private var generationStartMs = 0L
+
+    /** Frozen when the generation ends so tok/s stops decaying. */
+    @Volatile private var generationEndMs = 0L
+
+    /** Context tokens reported by the bridge between generations. */
+    @Volatile private var usedSnapshot = 0
+
+    /** True while the native loop is streaming. */
+    @Volatile private var inGeneration = false
 
     /** 0.0–1.0 while a model loads (best-effort UI signal). */
     @Volatile var loadProgress: Double = 0.0
@@ -119,33 +129,50 @@ class LlamaCppEngine(private val context: Context) : ChatEngine {
 
         try {
             withContext(Dispatchers.IO) {
-                Bridge.generate(
-                    prompt = prompt,
-                    imagePath = null,
-                    maxTokens = request.maxTokens.toLong(),
-                    temperature = request.temperature,
-                    topP = 0.95,
-                    topK = 40,
-                    minP = 0.05,
-                    typicalP = 1.0,
-                    repeatPenalty = 1.1,
-                    frequencyPenalty = 0.0,
-                    presencePenalty = 0.0,
-                    repeatLastN = 64,
-                    mirostat = 0,
-                    mirostatTau = 5.0,
-                    mirostatEta = 0.1,
-                    seed = -1,
-                    penalizeNewline = false,
-                ) { token ->
-                    if (cancelRequested.get()) java.lang.Boolean.TRUE // stop signal
-                    else {
-                        val piece = token as? String
-                        if (!piece.isNullOrEmpty()) {
-                            trySend(TokenEvent.Delta(piece))
-                            tokensThisGeneration++
+                runNative {
+                    inGeneration = true
+                    try {
+                        // Serialized with load/unload on the native thread:
+                        // a load or model delete issued mid-generation would
+                        // otherwise touch bridge state concurrently.
+                        usedSnapshot = Bridge.tokensUsed()
+                        Bridge.generate(
+                            prompt = prompt,
+                            imagePath = null,
+                            maxTokens = request.maxTokens.toLong(),
+                            temperature = request.temperature,
+                            topP = 0.95,
+                            topK = 40,
+                            minP = 0.05,
+                            typicalP = 1.0,
+                            repeatPenalty = 1.1,
+                            frequencyPenalty = 0.0,
+                            presencePenalty = 0.0,
+                            repeatLastN = 64,
+                            mirostat = 0,
+                            mirostatTau = 5.0,
+                            mirostatEta = 0.1,
+                            seed = -1,
+                            penalizeNewline = false,
+                        ) { token ->
+                            if (cancelRequested.get()) java.lang.Boolean.TRUE // stop signal
+                            else {
+                                val piece = token as? String
+                                if (!piece.isNullOrEmpty()) {
+                                    // Blocking send applies backpressure to
+                                    // the native loop; trySend would drop
+                                    // tokens silently once the buffer fills
+                                    // and corrupt the reply text.
+                                    trySendBlocking(TokenEvent.Delta(piece))
+                                    tokensThisGeneration++
+                                }
+                                null
+                            }
                         }
-                        null
+                    } finally {
+                        usedSnapshot = Bridge.tokensUsed()
+                        generationEndMs = System.currentTimeMillis()
+                        inGeneration = false
                     }
                 }
             }
@@ -168,10 +195,15 @@ class LlamaCppEngine(private val context: Context) : ChatEngine {
     override val stats: EngineStats?
         get() {
             if (!ready.get()) return null
-            val used = runCatching {
-                nativeThread.submit(java.util.concurrent.Callable { Bridge.tokensUsed() }).get()
-            }.getOrNull() ?: return null
-            val elapsed = (System.currentTimeMillis() - generationStartMs) / 1000.0
+            // No bridge call here: the native thread may be busy with the
+            // running generation. Between generations the snapshot is exact;
+            // while streaming, add the tokens produced so far.
+            val used = if (inGeneration) usedSnapshot + tokensThisGeneration else usedSnapshot
+            // While streaming, divide by live elapsed; after Done, freeze
+            // at the generation's final average instead of decaying to 0.
+            val now = System.currentTimeMillis()
+            val endMs = if (inGeneration) now else maxOf(generationEndMs, generationStartMs)
+            val elapsed = (endMs - generationStartMs) / 1000.0
             val tps = if (elapsed > 0.2 && tokensThisGeneration > 0)
                 tokensThisGeneration / elapsed else 0.0
             return EngineStats(tps, used, contextSize)

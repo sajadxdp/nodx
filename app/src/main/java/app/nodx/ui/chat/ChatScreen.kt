@@ -80,6 +80,9 @@ fun ChatScreen(container: AppContainer) {
     val listState = rememberLazyListState()
 
     LaunchedEffect(container) {
+        // A session deleted in the Sessions tab must not keep its transcript
+        // on this screen — sending from it would write orphan messages.
+        vm.dropIfSessionGone()
         container.openSessionRequest.collect { id ->
             if (id != null) {
                 vm.openSession(id)

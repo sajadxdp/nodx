@@ -70,9 +70,13 @@ class ChatViewModel(
         )
 
         genJob = viewModelScope.launch {
-            repo.upsertSession(session)
+            if (existing) {
+                // touch only — upserting would reset the session's created_at
+                repo.touchSession(sessionId)
+            } else {
+                repo.upsertSession(session)
+            }
             repo.insertMessage(userMsg)
-            if (existing) repo.touchSession(sessionId)
 
             // Full conversation history — the engine sees the whole chat.
             val history = _state.value.messages
@@ -100,16 +104,25 @@ class ChatViewModel(
                 ).collect { event ->
                     when (event) {
                         is TokenEvent.Delta -> {
+                            // The reply text is always accumulated (the final
+                            // insert persists it), but state updates are
+                            // guarded: after newSession()/openSession() the
+                            // wind-down may still stream a few deltas, and
+                            // those must not paint into another session.
                             reply.append(event.text)
-                            _state.value = _state.value.copy(
-                                messages = withLiveAssistant(reply.toString()),
-                                stats = engine.stats,
-                            )
+                            if (_state.value.sessionId == sessionId) {
+                                _state.value = _state.value.copy(
+                                    messages = withLiveAssistant(reply.toString()),
+                                    stats = engine.stats,
+                                )
+                            }
                         }
                         is TokenEvent.Failed ->
                             failure = event.error.message ?: "Generation failed"
                         is TokenEvent.Done ->
-                            _state.value = _state.value.copy(stats = engine.stats)
+                            if (_state.value.sessionId == sessionId) {
+                                _state.value = _state.value.copy(stats = engine.stats)
+                            }
                     }
                 }
             } catch (e: Exception) {
@@ -162,11 +175,10 @@ class ChatViewModel(
             msgs.filter { it.id != lastAssistant.id }
         } else msgs
 
-        _state.value = _state.value.copy(messages = kept)
+        _state.value = _state.value.copy(messages = kept, isGenerating = true)
 
         // Re-send the last user message against the trimmed history.
         genJob = viewModelScope.launch {
-            _state.value = _state.value.copy(isGenerating = true)
             val history = kept
             val cfg = settings.current()
             val engine = pickEngine(cfg) ?: run {
@@ -186,14 +198,21 @@ class ChatViewModel(
                 ).collect { event ->
                     when (event) {
                         is TokenEvent.Delta -> {
+                            // Same guard as send(): only the owning session
+                            // renders the live bubble.
                             reply.append(event.text)
-                            _state.value = _state.value.copy(
-                                messages = withLiveAssistant(reply.toString()),
-                                stats = engine.stats,
-                            )
+                            if (_state.value.sessionId == sessionId) {
+                                _state.value = _state.value.copy(
+                                    messages = withLiveAssistant(reply.toString()),
+                                    stats = engine.stats,
+                                )
+                            }
                         }
                         is TokenEvent.Failed -> failure = event.error.message ?: "Generation failed"
-                        is TokenEvent.Done -> _state.value = _state.value.copy(stats = engine.stats)
+                        is TokenEvent.Done ->
+                            if (_state.value.sessionId == sessionId) {
+                                _state.value = _state.value.copy(stats = engine.stats)
+                            }
                     }
                 }
             } catch (e: Exception) {
@@ -245,6 +264,21 @@ class ChatViewModel(
                 title = session?.title ?: "nodx",
                 messages = msgs,
             )
+        }
+    }
+
+    /**
+     * Called when the Chat tab is re-entered. If the session currently shown
+     * was deleted from the Sessions tab, the transcript must not stay on
+     * screen: sending from it would write orphan messages to a dead id.
+     */
+    suspend fun dropIfSessionGone() {
+        val id = _state.value.sessionId ?: return
+        if (repo.sessions().none { it.id == id }) {
+            container.localEngine.cancel()
+            container.cloudEngine.cancel()
+            genJob?.join()
+            _state.value = ChatUiState()
         }
     }
 

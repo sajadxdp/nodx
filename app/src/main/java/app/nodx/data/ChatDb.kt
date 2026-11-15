@@ -83,7 +83,9 @@ class ChatRepository(private val db: ChatDb) {
     suspend fun messages(sessionId: String): List<ChatMessage> = withContext(Dispatchers.IO) {
         db.readableDatabase.rawQuery(
             "SELECT id, session_id, role, content, error, latency_ms, created_at " +
-                "FROM messages WHERE session_id = ? ORDER BY created_at ASC",
+                // rowid breaks ties: two messages in the same millisecond
+                // must keep their insertion order on reload.
+                "FROM messages WHERE session_id = ? ORDER BY created_at ASC, rowid ASC",
             arrayOf(sessionId),
         ).use { c ->
             buildList {
@@ -124,8 +126,15 @@ class ChatRepository(private val db: ChatDb) {
     }
 
     suspend fun deleteSession(id: String) = withContext(Dispatchers.IO) {
-        db.writableDatabase.execSQL("DELETE FROM messages WHERE session_id = ?", arrayOf<Any?>(id))
-        db.writableDatabase.execSQL("DELETE FROM sessions WHERE id = ?", arrayOf<Any?>(id))
+        // Atomic: a crash between the two deletes would orphan messages.
+        db.writableDatabase.beginTransaction()
+        try {
+            db.writableDatabase.execSQL("DELETE FROM messages WHERE session_id = ?", arrayOf<Any?>(id))
+            db.writableDatabase.execSQL("DELETE FROM sessions WHERE id = ?", arrayOf<Any?>(id))
+            db.writableDatabase.setTransactionSuccessful()
+        } finally {
+            db.writableDatabase.endTransaction()
+        }
     }
 
     suspend fun deleteMessage(id: String) = withContext(Dispatchers.IO) {
