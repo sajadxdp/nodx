@@ -1,5 +1,6 @@
 package app.nodx
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,10 +19,13 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -46,14 +50,22 @@ class MainActivity : ComponentActivity() {
     private val dynamicColor = MutableStateFlow(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val container = (application as NodxApplication).container
+        // Block once on the stored appearance, BEFORE super.onCreate: pick
+        // the launch theme from the app setting, not the system night mode.
+        // A LIGHT setting on a dark system must not paint one dark frame,
+        // and vice versa (SYSTEM keeps following the system).
+        val initial = kotlinx.coroutines.runBlocking { container.settings.settings.first() }
+        setTheme(
+            when (initial.theme) {
+                ThemeSetting.LIGHT -> R.style.Theme_Nodx_Light
+                ThemeSetting.DARK -> R.style.Theme_Nodx_Dark
+                ThemeSetting.SYSTEM -> R.style.Theme_Nodx
+            }
+        )
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val container = (application as NodxApplication).container
-        // Block once on the stored appearance so the first composed frame
-        // matches the user's theme (DataStore's async first emission would
-        // otherwise paint one frame of the DARK default for light users).
-        val initial = kotlinx.coroutines.runBlocking { container.settings.settings.first() }
         appearance.value = initial.theme
         dynamicColor.value = initial.dynamicColor
         lifecycleScope.launch {
@@ -72,6 +84,16 @@ class MainActivity : ComponentActivity() {
                 ThemeSetting.SYSTEM -> isSystemInDarkTheme()
             }
             NodxTheme(darkTheme = dark, dynamicColor = dynamic) {
+                // System bars must follow the APP's theme, not the system's
+                // — enableEdgeToEdge() alone keeps white icons when the app
+                // is Light but the system is dark (and vice versa).
+                val view = LocalView.current
+                SideEffect {
+                    val activity = view.context as Activity
+                    val controller = WindowCompat.getInsetsController(activity.window, view)
+                    controller.isAppearanceLightStatusBars = !dark
+                    controller.isAppearanceLightNavigationBars = !dark
+                }
                 NodxNav(container)
             }
         }

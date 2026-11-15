@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark launch surface matching the brand tile (default theme is dark). -->
-    <color name="launch_background">#0A0B10</color>
-
+    <!-- Only the system-following theme has a night variant; the explicit
+         LIGHT/DARK themes honor the app setting regardless of system mode. -->
     <style name="Theme.Nodx" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/launch_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

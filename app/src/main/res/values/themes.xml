@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- System-following default (manifest theme): light in day mode;
+         values-night overrides for night mode. -->
     <style name="Theme.Nodx" parent="android:Theme.Material.Light.NoActionBar">
-        <!-- Light launch surface; values-night overrides for dark. -->
         <item name="android:windowBackground">@color/launch_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Explicit overrides, selected in MainActivity from the stored
+         appearance. Defined only in values/ so they are NOT swapped by
+         values-night — they honor the app setting, not the system. -->
+    <style name="Theme.Nodx.Light" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/launch_light</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.Nodx.Dark" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/launch_dark</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 </resources>

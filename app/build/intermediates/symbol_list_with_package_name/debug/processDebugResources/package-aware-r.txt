@@ -428,6 +428,8 @@ color foreground_material_light
 color highlighted_text_material_dark
 color highlighted_text_material_light
 color launch_background
+color launch_dark
+color launch_light
 color material_blue_grey_800
 color material_blue_grey_900
 color material_blue_grey_950
@@ -1375,6 +1377,8 @@ style Theme_AppCompat_Light_DialogWhenLarge
 style Theme_AppCompat_Light_NoActionBar
 style Theme_AppCompat_NoActionBar
 style Theme_Nodx
+style Theme_Nodx_Dark
+style Theme_Nodx_Light
 style ThemeOverlay_AppCompat
 style ThemeOverlay_AppCompat_ActionBar
 style ThemeOverlay_AppCompat_Dark

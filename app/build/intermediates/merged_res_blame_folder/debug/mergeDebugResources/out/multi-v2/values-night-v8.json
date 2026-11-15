@@ -11,30 +11,29 @@
                         "startOffsets": "-1,-1,-1,-1,-1,-1,-1,-1"
                     },
                     "to": {
-                        "startLines": "2,3,4,5,6,7,8,13",
+                        "startLines": "3,4,5,6,7,8,9,14",
                         "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,125,209,293,389,491,593,930",
+                        "startOffsets": "107,177,261,345,441,543,645,982",
                         "endColumns": "69,83,83,95,101,101,93,88",
-                        "endOffsets": "120,204,288,384,486,588,682,1014"
+                        "endOffsets": "172,256,340,436,538,640,734,1066"
                     }
                 },
                 {
                     "source": "/home/sajad/nodx/app/src/main/res/values-night/themes.xml",
                     "from": {
-                        "startLines": "3",
-                        "startColumns": "4",
-                        "startOffsets": "121",
-                        "endLines": "6",
-                        "endColumns": "12",
-                        "endOffsets": "359"
+                        "startLines": "3,-1",
+                        "startColumns": "4,-1",
+                        "startOffsets": "137,-1",
+                        "endColumns": "51,-1",
+                        "endOffsets": "184,-1"
                     },
                     "to": {
-                        "startLines": "9",
-                        "startColumns": "4",
-                        "startOffsets": "687",
-                        "endLines": "12",
-                        "endColumns": "12",
-                        "endOffsets": "925"
+                        "startLines": "2,10",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,739",
+                        "endLines": "2,13",
+                        "endColumns": "51,12",
+                        "endOffsets": "102,977"
                     }
                 }
             ]
@@ -60,19 +59,34 @@
                 {
                     "source": "/home/sajad/nodx/app/src/main/res/values-night/themes.xml",
                     "from": {
-                        "startLines": "3,-1",
-                        "startColumns": "4,-1",
-                        "startOffsets": "137,-1",
-                        "endColumns": "51,-1",
-                        "endOffsets": "184,-1"
+                        "startLines": "-1",
+                        "startColumns": "-1",
+                        "startOffsets": "-1"
                     },
                     "to": {
-                        "startLines": "2,10",
-                        "startColumns": "4,4",
-                        "startOffsets": "55,739",
-                        "endLines": "2,13",
-                        "endColumns": "51,12",
-                        "endOffsets": "102,977"
+                        "startLines": "10",
+                        "startColumns": "4",
+                        "startOffsets": "739",
+                        "endLines": "13",
+                        "endColumns": "12",
+                        "endOffsets": "977"
+                    }
+                },
+                {
+                    "source": "/home/sajad/nodx/app/src/main/res/values-night/colors.xml",
+                    "from": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "137",
+                        "endColumns": "51",
+                        "endOffsets": "184"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "51",
+                        "endOffsets": "102"
                     }
                 }
             ]

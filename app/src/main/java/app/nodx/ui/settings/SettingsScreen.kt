@@ -1,6 +1,7 @@
 package app.nodx.ui.settings
 
 import android.os.Build
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -114,6 +115,12 @@ fun SettingsScreen(container: AppContainer) {
             )
             ListItem(
                 headlineContent = { Text("Dynamic color") },
+                modifier = Modifier.clickable(
+                    // The whole row toggles, not just the switch — a tap on
+                    // the switch itself is consumed by the switch and won't
+                    // double-fire here.
+                    onClick = { scope.launch { store.setDynamicColor(!s.dynamicColor) } },
+                ),
                 supportingContent = {
                     Text(
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)

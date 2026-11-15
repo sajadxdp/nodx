@@ -113,6 +113,8 @@
     <color name="highlighted_text_material_dark">#6680cbc4</color>
     <color name="highlighted_text_material_light">#66009688</color>
     <color name="launch_background">#FDF9FE</color>
+    <color name="launch_dark">#0A0B10</color>
+    <color name="launch_light">#FDF9FE</color>
     <color name="material_blue_grey_800">#ff37474f</color>
     <color name="material_blue_grey_900">#ff263238</color>
     <color name="material_blue_grey_950">#ff21272b</color>
@@ -1926,8 +1928,15 @@
         <item name="windowNoTitle">true</item>
     </style>
     <style name="Theme.Nodx" parent="android:Theme.Material.Light.NoActionBar">
-        
         <item name="android:windowBackground">@color/launch_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+    <style name="Theme.Nodx.Dark" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/launch_dark</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+    <style name="Theme.Nodx.Light" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/launch_light</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
     <style name="ThemeOverlay.AppCompat" parent="Base.ThemeOverlay.AppCompat"/>

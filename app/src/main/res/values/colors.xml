@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Light brand surface for the launch window (values-night has the dark tile). -->
+    <!-- Light brand surface, used by Theme.Nodx (system-following) and
+         Theme.Nodx.Light (explicit LIGHT) in day mode. -->
     <color name="launch_background">#FDF9FE</color>
+    <!-- Explicit launch surfaces, independent of system night mode. -->
+    <color name="launch_light">#FDF9FE</color>
+    <color name="launch_dark">#0A0B10</color>
 </resources>
