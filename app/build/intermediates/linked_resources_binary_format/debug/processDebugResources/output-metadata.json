@@ -11,8 +11,8 @@
       "type": "UNIVERSAL",
       "filters": [],
       "attributes": [],
-      "versionCode": 2,
-      "versionName": "0.2.0",
+      "versionCode": 3,
+      "versionName": "0.2.1",
       "outputFile": "linked-resources-binary-format-universalDebug.ap_"
     },
     {
@@ -24,8 +24,8 @@
         }
       ],
       "attributes": [],
-      "versionCode": 2,
-      "versionName": "0.2.0",
+      "versionCode": 3,
+      "versionName": "0.2.1",
       "outputFile": "linked-resources-binary-format-x86_64Debug.ap_"
     },
     {
@@ -37,8 +37,8 @@
         }
       ],
       "attributes": [],
-      "versionCode": 2,
-      "versionName": "0.2.0",
+      "versionCode": 3,
+      "versionName": "0.2.1",
       "outputFile": "linked-resources-binary-format-arm64-v8aDebug.ap_"
     },
     {
@@ -50,8 +50,8 @@
         }
       ],
       "attributes": [],
-      "versionCode": 2,
-      "versionName": "0.2.0",
+      "versionCode": 3,
+      "versionName": "0.2.1",
       "outputFile": "linked-resources-binary-format-armeabi-v7aDebug.ap_"
     }
   ],

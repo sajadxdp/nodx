@@ -99,6 +99,7 @@ fun ChatScreen(container: AppContainer) {
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             TopAppBar(
                 title = {
@@ -116,6 +117,7 @@ fun ChatScreen(container: AppContainer) {
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
                 ),
                 actions = {
                     AnimatedVisibility(

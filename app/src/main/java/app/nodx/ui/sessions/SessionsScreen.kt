@@ -157,11 +157,13 @@ fun SessionsScreen(
     }
 
     Scaffold(
+        containerColor = theme.surface,
         topBar = {
             TopAppBar(
                 title = { Text("Sessions") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = theme.surface,
+                    scrolledContainerColor = theme.surface,
                 ),
             )
         },

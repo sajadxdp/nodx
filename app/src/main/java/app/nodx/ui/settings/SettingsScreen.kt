@@ -73,11 +73,13 @@ fun SettingsScreen(container: AppContainer) {
     val theme = MaterialTheme.colorScheme
 
     Scaffold(
+        containerColor = theme.surface,
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = theme.surface,
+                    scrolledContainerColor = theme.surface,
                 ),
             )
         },
@@ -132,28 +134,24 @@ fun SettingsScreen(container: AppContainer) {
             SectionHeader("Engine")
             ListItem(
                 headlineContent = { Text("Engine mode") },
-                supportingContent = {
-                    Text(
-                        when (s.engineMode) {
-                            EngineModeSetting.CLOUD ->
-                                "Cloud — provider APIs."
-                            EngineModeSetting.LOCAL ->
-                                "Local — on-device GGUF. Load a model in Models first."
-                        }
-                    )
-                },
                 leadingContent = { Icon(Icons.Filled.Memory, contentDescription = null) },
-                trailingContent = {
-                    SingleChoiceSegmentedButtonRow {
-                        EngineModeSetting.entries.forEachIndexed { index, mode ->
-                            SegmentedButton(
-                                selected = s.engineMode == mode,
-                                onClick = { scope.launch { store.setEngineMode(mode) } },
-                                shape = SegmentedButtonDefaults.itemShape(
-                                    index,
-                                    EngineModeSetting.entries.size,
-                                ),
-                            ) { Text(mode.label) }
+                supportingContent = {
+                    // Buttons below the copy (same as the Theme row) — as a
+                    // trailing slot they squeezed the text into four wrapped
+                    // lines on narrow screens.
+                    Column {
+                        Text("Local — on-device GGUF · Cloud — provider APIs.")
+                        SingleChoiceSegmentedButtonRow(Modifier.padding(top = 8.dp)) {
+                            EngineModeSetting.entries.forEachIndexed { index, mode ->
+                                SegmentedButton(
+                                    selected = s.engineMode == mode,
+                                    onClick = { scope.launch { store.setEngineMode(mode) } },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index,
+                                        EngineModeSetting.entries.size,
+                                    ),
+                                ) { Text(mode.label) }
+                            }
                         }
                     }
                 },

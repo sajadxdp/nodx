@@ -59,10 +59,14 @@ fun ModelsScreen(container: AppContainer) {
     val theme = MaterialTheme.colorScheme
 
     Scaffold(
+        containerColor = theme.surface,
         topBar = {
             TopAppBar(
                 title = { Text("Models") },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = theme.surface),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = theme.surface,
+                    scrolledContainerColor = theme.surface,
+                ),
             )
         },
     ) { padding ->

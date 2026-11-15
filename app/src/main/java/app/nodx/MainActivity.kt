@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -97,8 +98,15 @@ private fun NodxNav(container: AppContainer) {
     )
 
     Scaffold(
+        // One flat background for every screen — the M3 default pulls the
+        // `background` role, which created visible dark bands/gaps between
+        // screens (especially under dynamic color, where background ≠ surface).
+        containerColor = MaterialTheme.colorScheme.surface,
         bottomBar = {
-            NavigationBar {
+            // surfaceContainer (the M3 default here) rendered a third,
+            // different dark under the top bar + body; pin to surface so the
+            // whole shell is one continuous color.
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 destinations.forEach { dest ->
                     NavigationBarItem(
                         selected = currentRoute == dest.route,

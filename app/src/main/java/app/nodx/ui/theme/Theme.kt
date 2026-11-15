@@ -43,6 +43,8 @@ private val LightColors = lightColorScheme(
     onTertiaryContainer = Color(0xFF26003A),
     surface = Color(0xFFFDF9FE),
     onSurface = Color(0xFF1C1B1E),
+    background = Color(0xFFFDF9FE),
+    onBackground = Color(0xFF1C1B1E),
     surfaceVariant = Color(0xFFE8E0EB),
     onSurfaceVariant = Color(0xFF4A454E),
     surfaceContainerLowest = Color(0xFFFFFFFF),
@@ -74,6 +76,11 @@ private val DarkColors = darkColorScheme(
     onTertiaryContainer = Color(0xFFF6E1FF),
     surface = TileBottom,
     onSurface = Color(0xFFE5E1E9),
+    // One color owns the whole background: unpinned `background` fell back
+    // to the M3 baseline (#141218-ish), which showed as darker bands between
+    // Settings sections wherever the scaffold background peeked through.
+    background = TileBottom,
+    onBackground = Color(0xFFE5E1E9),
     surfaceVariant = Color(0xFF2A2830),
     onSurfaceVariant = Color(0xFFCAC4CF),
     surfaceContainerLowest = Color(0xFF07080D),
