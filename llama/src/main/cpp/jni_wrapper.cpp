@@ -27,6 +27,7 @@
 #include "mtmd-helper.h"
 #define LOG_TAG "LlamaJNI"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 static llama_model* g_model = nullptr;
@@ -112,10 +113,30 @@ static void probeDotprod() {}
 static void probeFp16() {}
 #endif
 
-/// Loads a CPU variant without ggml's HWCAP-based score check (which
-/// load_backend enforces). Only for features probed above.
-static bool loadCpuVariantUnchecked(const std::string& path) {
-    void* handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+/// dlopens a backend module by its bare soname, falling back to the
+/// absolute path under nativeLibraryDir. With extractNativeLibs=false (the
+/// release packaging) the modules are not extracted to nativeLibraryDir —
+/// they live inside the APK and resolve only through the app's linker
+/// namespace, by name. dlerror is surfaced: a silent failure here cost a
+/// real-device outage that the emulator (statically linked CPU backend)
+/// could never reproduce.
+static void* openBackendModule(const std::string& soname) {
+    void* handle = dlopen(soname.c_str(), RTLD_NOW | RTLD_LOCAL);
+    if (handle) return handle;
+    const char* by_name = dlerror();  // consumed; keep for the log
+    const std::string abs = g_lib_dir + "/" + soname;
+    handle = dlopen(abs.c_str(), RTLD_NOW | RTLD_LOCAL);
+    if (handle) return handle;
+    LOGW("dlopen %s failed: by name: %s | by path: %s",
+         soname.c_str(), by_name ? by_name : "?", dlerror());
+    return nullptr;
+}
+
+/// dlopens a backend module (by name, falling back to a full path) and
+/// registers it with ggml from our own handle: ggml_backend_load works on
+/// file paths, which don't exist under extractNativeLibs=false.
+static bool registerBackendModule(const std::string& soname) {
+    void* handle = openBackendModule(soname);
     if (!handle) return false;
     using init_fn = ggml_backend_reg_t (*)();
     auto init = reinterpret_cast<init_fn>(dlsym(handle, "ggml_backend_init"));
@@ -128,14 +149,20 @@ static bool loadCpuVariantUnchecked(const std::string& path) {
     return true;
 }
 
+/// Loads a CPU variant without ggml's HWCAP-based score check (which
+/// load_backend enforces). Only for features probed above.
+static bool loadCpuVariantUnchecked(const std::string& soname) {
+    return registerBackendModule(soname);
+}
+
 static void loadCpuBackendLocked() {
     if (g_cpu_backend_loaded) return;
-    std::string best_path;
+    std::string best_soname;
     std::string best_name;
     int best_score = 0;
     for (const char* variant : kCpuVariants) {
-        const std::string path = g_lib_dir + "/libggml-cpu-" + variant + ".so";
-        void* handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+        const std::string soname = std::string("libggml-cpu-") + variant + ".so";
+        void* handle = openBackendModule(soname);
         if (!handle) continue;
         using score_fn = int (*)();
         auto score = reinterpret_cast<score_fn>(dlsym(handle, "ggml_backend_score"));
@@ -143,20 +170,20 @@ static void loadCpuBackendLocked() {
         dlclose(handle);
         if (value > best_score) {
             best_score = value;
-            best_path = path;
+            best_soname = soname;
             best_name = variant;
         }
     }
     if (best_name == "android_armv8.0_1" && cpuRuns(probeDotprod)) {
         const char* variant = cpuRuns(probeFp16) ? "android_armv8.2_2" : "android_armv8.2_1";
-        const std::string path = g_lib_dir + "/libggml-cpu-" + variant + ".so";
-        if (loadCpuVariantUnchecked(path)) {
+        const std::string soname = std::string("libggml-cpu-") + variant + ".so";
+        if (loadCpuVariantUnchecked(soname)) {
             g_cpu_backend_loaded = true;
             LOGI("CPU backend: %s (kernel hides these features; probed them instead)", variant);
             return;
         }
     }
-    if (!best_path.empty() && ggml_backend_load(best_path.c_str())) {
+    if (!best_soname.empty() && loadCpuVariantUnchecked(best_soname)) {
         g_cpu_backend_loaded = true;
         LOGI("CPU backend: %s (score %d)", best_name.c_str(), best_score);
     } else {
@@ -166,12 +193,11 @@ static void loadCpuBackendLocked() {
 
 static bool loadGpuBackendLocked() {
     if (g_gpu_backend_loaded) return true;
-    const std::string path = g_lib_dir + "/libggml-vulkan.so";
-    if (ggml_backend_load(path.c_str())) {
+    if (registerBackendModule("libggml-vulkan.so")) {
         g_gpu_backend_loaded = true;
         LOGI("Vulkan backend loaded");
     } else {
-        LOGE("Vulkan backend unavailable (%s)", path.c_str());
+        LOGE("Vulkan backend unavailable");
     }
     return g_gpu_backend_loaded;
 }
@@ -179,9 +205,8 @@ static bool loadGpuBackendLocked() {
 /// The RPC backend registry (phone cluster), loading it on first use.
 static ggml_backend_reg_t loadRpcBackendLocked() {
     if (!g_rpc_backend_loaded) {
-        const std::string path = g_lib_dir + "/libggml-rpc.so";
-        if (!ggml_backend_load(path.c_str())) {
-            LOGE("RPC backend unavailable (%s)", path.c_str());
+        if (!registerBackendModule("libggml-rpc.so")) {
+            LOGE("RPC backend unavailable");
             return nullptr;
         }
         g_rpc_backend_loaded = true;

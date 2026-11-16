@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -54,22 +55,29 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.nodx.AppContainer
@@ -110,13 +118,48 @@ fun ChatScreen(container: AppContainer) {
     val conversationFocus = remember { FocusRequester() }
     var focusConversation by remember { mutableStateOf(false) }
 
-    // Keep the view pinned to the newest content while streaming — but only
-    // when the user is already at the bottom, so scrolling up during a long
-    // reply isn't fought by the auto-scroll. Jump (not animate) so per-token
-    // recompositions don't restart animations.
+    // Keep the view pinned to the newest content while streaming. Following
+    // the reply is the default; a user drag toward earlier content pauses it,
+    // and settling back at the bottom resumes it. A canScrollForward-style
+    // guard can't express this: once a reply outgrows the viewport the list
+    // sits short of the end, the guard goes false, and pinning silently dies
+    // mid-stream (seen on a real phone — the tail of the reply hid behind
+    // the composer). User intent is read through a nestedScroll connection,
+    // which programmatic jumps never pass through, so they can't fight the
+    // user's hand. Jumps land on the true end (scrollBy consumes the
+    // remainder scrollToItem leaves).
+    val atBottom = remember {
+        derivedStateOf {
+            val info = listState.layoutInfo
+            val last = info.visibleItemsInfo.lastOrNull()
+            last == null || (last.index == info.totalItemsCount - 1 &&
+                last.offset + last.size <= info.viewportEndOffset + 1)
+        }
+    }
+    val followBottom = remember { mutableStateOf(true) }
+    val followInput = remember(listState) {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                if (source == NestedScrollSource.UserInput && consumed.y < 0f) {
+                    followBottom.value = false
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                followBottom.value = atBottom.value
+                return Velocity.Zero
+            }
+        }
+    }
     LaunchedEffect(state.messages.size, state.messages.lastOrNull()?.content) {
-        if (state.messages.isNotEmpty() && !listState.canScrollForward) {
+        if (state.messages.isNotEmpty() && followBottom.value && !listState.isScrollInProgress) {
             listState.scrollToItem(state.messages.lastIndex)
+            listState.scrollBy(1e9f)
         }
     }
 
@@ -212,7 +255,8 @@ fun ChatScreen(container: AppContainer) {
                             state = listState,
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .nestedScroll(followInput),
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(
                                 horizontal = 12.dp,

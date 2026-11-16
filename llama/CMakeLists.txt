@@ -6,9 +6,13 @@ project(llama_jni)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Android 15 16KB page size compliance
+# Android 15 16KB page size compliance. Backends built with GGML_BACKEND_DL
+# are MODULE libraries, which the linker links with CMAKE_MODULE_LINKER_FLAGS
+# — so that flag must carry the page-size option too, or the backend .so
+# files come out 4KB-aligned and dlopen refuses them on 16KB-page devices.
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
+set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
 
 # ARM64 optimizations. No global -march: the CPU backend is built once per
 # Arm generation (below) and the best one for the phone is picked at runtime.
