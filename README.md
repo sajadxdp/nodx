@@ -19,24 +19,41 @@ and de-Fluttered.
 
 ## Feature status
 
-- ✅ **Chat** — streaming, cancelable, full-history context, error bubbles with
-  Retry, Regenerate (drops the last reply and re-asks), copy on long-press,
-  light markdown (bold, inline code, fenced blocks), live stats line
-  (engine · tok/s · context fill), persisted sessions
+- ✅ **Chat** — streaming, cancelable, full-history context; messages as
+  full-width cards with role headers (You / Assistant); failures as bordered
+  blocks with Retry; Regenerate; copy on long-press; light markdown (bold,
+  inline code, fenced blocks); live stats line (engine · tok/s · context fill);
+  persisted sessions; a pinned-to-bottom transcript that yields to your
+  scroll and resumes
+- ✅ **Composer** — engine chip (switch Local/Cloud from the chat itself) +
+  live model chip (loaded GGUF filename or provider model) above the input;
+  circular send that becomes a red stop while streaming
+- ✅ **Empty state** — a swimming sea scene (ASCII fish and hearts in brand
+  colors) around a centered greeting and a "What's on your mind?" input
 - ✅ **Cloud engines** — OpenAI, OpenRouter, DeepSeek, Kimi, **Anthropic**
   (Messages API), **Google** (streamGenerateContent SSE), custom
   OpenAI-compatible endpoints; fixture-tested parsers for all three protocols
 - ✅ **Local engine** — GGUF models on-device via llama.cpp; device-tier
-  auto-config (context size, threads); GGUF header metadata parsing; loading a
-  model auto-switches chat to Local
+  auto-config (context size, threads); GGUF header metadata parsing;
+  runtime-selected per-Arm-generation CPU backends (16 KB-page aligned,
+  soname-resolved so they load under `extractNativeLibs=false` packaging)
 - ✅ **Model catalog & downloader** — curated list filtered by device RAM,
   HTTP-Range resume, pause, live speed/ETA
-- ✅ **Sessions** — rename (dialog), delete with confirmation, relative times,
-  opening restores the full transcript
-- ✅ **Settings** — provider/keys/model, system prompt, temperature, max
-  tokens, engine mode, theme
-- ⏳ **Later** — vision (mmproj), Vulkan backend (NDK shader limits), release
-  signing
+- ✅ **Sessions** — quiet cards with relative times, rename (dialog), delete
+  with confirmation, opening restores the full transcript
+- ✅ **Settings** — grouped-card layout: provider/keys/model, system prompt,
+  temperature, max tokens, engine mode, theme, dynamic color, plus an
+  **About** section (version, developer, GitHub, issue tracker)
+- ✅ **Releases** — signed APKs (arm64-v8a, armeabi-v7a, x86_64, universal)
+  published via GitHub Releases with CI building all four
+- ⏳ **Later** — vision (mmproj), Vulkan backend (NDK shader limits)
+
+## Install
+
+Grab a signed APK from
+[Releases](https://github.com/sajadxdp/nodx/releases/latest) — arm64-v8a
+covers most phones (the Galaxy-class target), universal fits everything
+back to API 28.
 
 ## Architecture
 
@@ -66,28 +83,44 @@ interface ChatEngine {
 }
 ```
 
+## Design
+
+The UI language follows [dzianisv/opencode-mobile]: flat neutral surfaces
+(`#F4F4F6` page with white cards in light, `#0A0B10` page with `#1A1B23`
+cards in dark), hairline separators, accent-only color, full-width message
+cards with role headers, and a composer toolbar with engine/model chips.
+The brand violet (`#883DEA` / `#B073F5`) and the adaptive launcher icon
+(minimal stroke-drawn **N** inside Google's 66 dp adaptive-icon safe zone)
+are nodx's own. Material You dynamic color remains an opt-in.
+
 ## Build
 
 ```bash
-./gradlew assembleDebug     # debug APK
-./gradlew test              # unit tests (SSE, GGUF, templates)
+./gradlew assembleRelease   # signed release APKs (4 ABIs)
+./gradlew test              # unit tests (SSE, GGUF, templates, engine)
 ```
 
 Requirements: JDK 17, Android SDK 36, NDK (bundled CMake 3.22.1).
 
 First run: pick a provider in **Settings → Cloud provider**, paste an API
 key — or go offline-first in **Models**, download a GGUF (device-tier
-filtered), tap **Load**, and switch **Engine mode → Local**.
+filtered), tap **Load**, and switch engines from the composer's
+**Local/Cloud chip** — no trip to Settings needed.
 
 ## Notes
 
-- Local inference targets arm64 devices (minSdk 28). The Vulkan backend is
+- Local inference targets Arm devices (minSdk 28). The Vulkan backend is
   compiled out until the NDK's shader compiler catches up; CPU backends
   cover every Arm generation and are picked at runtime.
+- Runtime-loaded backend modules resolve by soname (the APK keeps native
+  libraries inside the APK; `nativeLibraryDir` is empty under
+  `extractNativeLibs=false`) and failures log dlerror instead of failing
+  silently.
 - `llama/` keeps the `com.write4me.llama_flutter_android` namespace because
   JNI symbols in `jni_wrapper.cpp` bind to that exact class path.
 
 [PrivateLM]: https://github.com/orailnoor/cross-platform-llm-client
+[dzianisv/opencode-mobile]: https://github.com/dzianisv/opencode-mobile
 
 ## Brand
 
