@@ -17,6 +17,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -31,16 +34,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -73,6 +83,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -89,6 +100,7 @@ import kotlin.math.PI
 import kotlin.math.sin
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.nodx.AppContainer
+import app.nodx.data.EngineModeSetting
 import app.nodx.domain.ChatMessage
 import app.nodx.domain.MessageRole
 import app.nodx.ui.vmFactory
@@ -107,8 +119,19 @@ fun ChatScreen(container: AppContainer) {
         },
     )
     val state by vm.state.collectAsState()
+    val chatSettings by vm.settingsFlow.collectAsState()
     var text by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
+
+    // The model chip reads the live engine state: the loaded GGUF file for
+    // local, the configured model id for cloud.
+    val modelLabel = when (chatSettings?.engineMode) {
+        EngineModeSetting.LOCAL ->
+            (container.localEngine.loadedModelPath)?.let { java.io.File(it).name } ?: "no model"
+        EngineModeSetting.CLOUD ->
+            chatSettings?.model?.ifBlank { chatSettings?.provider?.defaultModel } ?: ""
+        null -> ""
+    }
 
     LaunchedEffect(container) {
         // A session deleted in the Sessions tab must not keep its transcript
@@ -198,16 +221,6 @@ fun ChatScreen(container: AppContainer) {
                 ),
                 actions = {
                     AnimatedVisibility(
-                        visible = state.isGenerating,
-                        enter = fadeIn(),
-                        exit = fadeOut(),
-                    ) {
-                        TextButton(onClick = vm::stop) {
-                            Icon(Icons.Filled.Stop, contentDescription = null)
-                            Text("Stop")
-                        }
-                    }
-                    AnimatedVisibility(
                         visible = !state.isGenerating && state.messages.size > 1,
                         enter = fadeIn(),
                         exit = fadeOut(),
@@ -265,6 +278,11 @@ fun ChatScreen(container: AppContainer) {
                                     text = ""
                                 },
                                 hint = "What's on your mind?",
+                                isGenerating = state.isGenerating,
+                                onStop = vm::stop,
+                                engineMode = chatSettings?.engineMode,
+                                modelLabel = modelLabel,
+                                onEngineMode = vm::setEngineMode,
                             )
                         }
                     }
@@ -299,14 +317,20 @@ fun ChatScreen(container: AppContainer) {
                         Composer(
                             value = text,
                             onValueChange = { text = it },
-                            // Keep the field draftable while a reply streams; only the
-                            // send button gates on generation state.
+                            // Keep the field draftable while a reply streams; the
+                            // send button gates on generation state, and the
+                            // trailing action becomes a stop button while busy.
                             canSend = !state.isGenerating,
                             onSend = {
                                 vm.send(text)
                                 text = ""
                             },
                             focusRequester = conversationFocus,
+                            isGenerating = state.isGenerating,
+                            onStop = vm::stop,
+                            engineMode = chatSettings?.engineMode,
+                            modelLabel = modelLabel,
+                            onEngineMode = vm::setEngineMode,
                         )
                     }
                 }
@@ -352,6 +376,13 @@ private fun Greeting() {
     }
 }
 
+/**
+ * Message card, opencode-mobile style: a full-width rounded card with a
+ * role header (icon + "You"/"Assistant") instead of chat-tail bubbles.
+ * The user card is flat neutral; the assistant card carries a low-alpha
+ * brand-violet wash so the two roles read instantly while staying quiet.
+ * Long-press still copies the text.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatBubble(
@@ -365,82 +396,100 @@ fun ChatBubble(
     val isUser = message.role == MessageRole.USER
     val hasError = message.error != null
 
-    val container = when {
-        hasError -> theme.errorContainer
-        isUser -> theme.primaryContainer
-        else -> theme.surfaceContainerHigh
-    }
-    val content = when {
-        hasError -> theme.onErrorContainer
-        isUser -> theme.onPrimaryContainer
-        else -> theme.onSurface
+    // Violet wash for assistant, flat neutral for user; both derived from
+    // the live scheme so dynamic color stays coherent.
+    val container = if (isUser) {
+        theme.surfaceContainerHigh
+    } else {
+        theme.primary.copy(alpha = 0.09f).compositeOver(theme.surfaceContainerHigh)
     }
 
-    Row(
-        Modifier.fillMaxWidth().then(modifier),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
-    ) {
-        Surface(
-            color = container,
-            contentColor = content,
-            shape = RoundedCornerShape(
-                topStart = 18.dp,
-                topEnd = 18.dp,
-                bottomEnd = if (isUser) 4.dp else 18.dp,
-                bottomStart = if (isUser) 18.dp else 4.dp,
+    Surface(
+        color = container,
+        shape = RoundedCornerShape(14.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { clipboard?.setText(AnnotatedString(message.content)) },
             ),
-            modifier = Modifier
-                .widthIn(max = 300.dp)
-                .padding(horizontal = 4.dp)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = { clipboard?.setText(AnnotatedString(message.content)) },
-                ),
-        ) {
-            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                if (hasError) {
-                    Text("⚠ ${message.error}", style = MaterialTheme.typography.bodyMedium)
-                    if (!isUser && canRetry) {
-                        TextButton(onClick = onRetry) { Text("Retry") }
-                    }
-                } else if (message.content.isEmpty() && !isUser) {
-                    TypingDots(color = content)
-                } else if (isUser) {
-                    androidx.compose.foundation.text.selection.SelectionContainer {
-                        Text(message.content, style = MaterialTheme.typography.bodyLarge)
-                    }
-                } else {
-                    androidx.compose.foundation.text.selection.SelectionContainer {
-                        Column {
-                            parseSegments(message.content).forEach { segment ->
-                                when (segment) {
-                                    is Segment.Rich -> Text(
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    if (isUser) Icons.Filled.Person else Icons.Filled.AutoAwesome,
+                    contentDescription = null,
+                    tint = if (isUser) theme.onSurfaceVariant else theme.primary,
+                    modifier = Modifier.size(15.dp),
+                )
+                Text(
+                    if (isUser) "You" else "Assistant",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = theme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.size(6.dp))
+
+            if (hasError) {
+                ErrorBlock(message.error, canRetry, onRetry)
+            } else if (message.content.isEmpty() && !isUser) {
+                TypingDots(color = theme.onSurfaceVariant)
+            } else {
+                SelectionContainer {
+                    Column {
+                        parseSegments(message.content).forEach { segment ->
+                            when (segment) {
+                                is Segment.Rich -> Text(
+                                    segment.text,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                                is Segment.Code -> Surface(
+                                    color = theme.surfaceContainerHighest,
+                                    contentColor = theme.onSurface,
+                                    shape = MaterialTheme.shapes.small,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                ) {
+                                    Text(
                                         segment.text,
-                                        style = MaterialTheme.typography.bodyLarge,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontFamily = FontFamily.Monospace,
+                                        ),
+                                        modifier = Modifier.padding(8.dp),
                                     )
-                                    is Segment.Code -> Surface(
-                                        color = theme.surfaceContainerHighest,
-                                        contentColor = content,
-                                        shape = MaterialTheme.shapes.small,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                    ) {
-                                        androidx.compose.foundation.text.selection.SelectionContainer {
-                                            Text(
-                                                segment.text,
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    fontFamily = FontFamily.Monospace,
-                                                ),
-                                                modifier = Modifier.padding(8.dp),
-                                            )
-                                        }
-                                    }
                                 }
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** Run-level failure, rendered as a bordered red-tinted block inside the
+ * assistant card. The Retry belongs to the bubble that failed. */
+@Composable
+private fun ErrorBlock(error: String?, canRetry: Boolean, onRetry: () -> Unit) {
+    val theme = MaterialTheme.colorScheme
+    Surface(
+        color = theme.error.copy(alpha = 0.10f),
+        contentColor = theme.error,
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, theme.error.copy(alpha = 0.35f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+            Text(
+                "\u26A0 ${error ?: "Generation failed"}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            if (canRetry) {
+                TextButton(onClick = onRetry) { Text("Retry") }
             }
         }
     }
@@ -588,8 +637,99 @@ private fun Composer(
     canSend: Boolean,
     onSend: () -> Unit,
     focusRequester: FocusRequester? = null,
-    hint: String = "Message…",
+    hint: String = "Message\u2026",
+    isGenerating: Boolean = false,
+    onStop: () -> Unit = {},
+    engineMode: EngineModeSetting? = null,
+    modelLabel: String = "",
+    onEngineMode: ((EngineModeSetting) -> Unit)? = null,
 ) {
+    val theme = MaterialTheme.colorScheme
+
+    // Toolbar row above the input — the opencode-mobile signature: the
+    // engine switch and the active model sit right where the thumbs are.
+    if (engineMode != null && onEngineMode != null) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+                .padding(top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            var engineMenu by remember { mutableStateOf(false) }
+            Box {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { engineMenu = true }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                ) {
+                    Box(
+                        Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (engineMode == EngineModeSetting.LOCAL) Color(0xFF22C55E)
+                                else theme.primary
+                            ),
+                    )
+                    Text(
+                        engineMode.name.lowercase().replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = theme.onSurface,
+                    )
+                    Icon(
+                        Icons.Filled.SwapHoriz,
+                        contentDescription = "Switch engine",
+                        tint = theme.onSurfaceVariant,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+                DropdownMenu(expanded = engineMenu, onDismissRequest = { engineMenu = false }) {
+                    EngineModeSetting.entries.forEach { mode ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    mode.name.lowercase().replaceFirstChar { it.uppercase() } +
+                                        if (mode == EngineModeSetting.LOCAL) " — on-device GGUF" else " — provider API"
+                                )
+                            },
+                            onClick = {
+                                engineMenu = false
+                                onEngineMode(mode)
+                            },
+                        )
+                    }
+                }
+            }
+            if (modelLabel.isNotBlank()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.Memory,
+                        contentDescription = null,
+                        tint = theme.onSurfaceVariant,
+                        modifier = Modifier.size(13.dp),
+                    )
+                    Text(
+                        modelLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = theme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+
     Row(
         Modifier
             .fillMaxWidth()
@@ -602,32 +742,47 @@ private fun Composer(
             modifier = Modifier
                 .weight(1f)
                 .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
-            placeholder = { Text(hint) },
-            shape = MaterialTheme.shapes.extraLarge,
+            placeholder = { Text(hint, color = theme.onSurfaceVariant) },
+            shape = RoundedCornerShape(22.dp),
             minLines = 1,
             maxLines = 5,
             colors = TextFieldDefaults.colors(
+                focusedContainerColor = theme.surfaceContainerHigh,
+                unfocusedContainerColor = theme.surfaceContainerHigh,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 disabledIndicatorColor = Color.Transparent,
+                cursorColor = theme.primary,
             ),
         )
-        val sendable = canSend && value.isNotBlank()
-        FilledIconButton(
-            onClick = { if (sendable) onSend() },
-            enabled = sendable,
-            modifier = Modifier.padding(start = 8.dp),
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
-        ) {
-            Icon(
-                Icons.Filled.ArrowUpward,
-                contentDescription = "Send",
-            )
+        // The trailing action mirrors opencode-mobile: a red stop while the
+        // agent is busy, the circular send otherwise (gray until typable).
+        if (isGenerating) {
+            FilledIconButton(
+                onClick = onStop,
+                modifier = Modifier.padding(start = 8.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = Color(0xFFEF4444),
+                    contentColor = Color.White,
+                ),
+            ) {
+                Icon(Icons.Filled.Stop, contentDescription = "Stop")
+            }
+        } else {
+            val sendable = canSend && value.isNotBlank()
+            FilledIconButton(
+                onClick = { if (sendable) onSend() },
+                enabled = sendable,
+                modifier = Modifier.padding(start = 8.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = theme.primary,
+                    contentColor = theme.onPrimary,
+                    disabledContainerColor = theme.surfaceContainerHigh,
+                    disabledContentColor = theme.onSurfaceVariant,
+                ),
+            ) {
+                Icon(Icons.Filled.ArrowUpward, contentDescription = "Send")
+            }
         }
     }
 }

@@ -1,16 +1,22 @@
 package app.nodx.ui.models
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
@@ -21,13 +27,12 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Badge
 
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.Surface
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -92,12 +97,14 @@ fun ModelsScreen(container: AppContainer) {
             }
             state.error?.let { err ->
                 item {
-                    Card {
-                        Text(
-                            "⚠ $err",
-                            color = theme.error,
-                            modifier = Modifier.padding(12.dp),
-                        )
+                    Surface(
+                        color = theme.error.copy(alpha = 0.10f),
+                        contentColor = theme.error,
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, theme.error.copy(alpha = 0.35f)),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("⚠ $err", modifier = Modifier.padding(12.dp))
                     }
                 }
             }
@@ -135,11 +142,26 @@ fun ModelsScreen(container: AppContainer) {
 private fun SectionHeader(title: String) {
     Text(
         title.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 4.dp),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 6.dp),
     )
+}
+
+/** Flat card shell shared by every model row: rounded, hairline border,
+ * no elevation — the opencode-mobile card look. */
+@Composable
+private fun ModelCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    val theme = MaterialTheme.colorScheme
+    Surface(
+        color = theme.surfaceContainerLowest,
+        shape = RoundedCornerShape(14.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, theme.outlineVariant),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        androidx.compose.foundation.layout.Column(content = content)
+    }
 }
 
 @Composable
@@ -151,48 +173,59 @@ private fun DownloadedModelCard(
     onDelete: () -> Unit,
 ) {
     val theme = MaterialTheme.colorScheme
-    Card(modifier = Modifier.fillMaxWidth()) {
-        ListItem(
-            headlineContent = { Text(model.filename, maxLines = 1, style = MaterialTheme.typography.bodyMedium) },
-            supportingContent = {
-                Text(
-                    "${"%.1f".format(model.sizeBytes / 1e9)} GB" +
-                        (model.contextLength?.let { " · ctx $it" } ?: ""),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            },
-            leadingContent = {
+    ModelCard {
+        Row(
+            Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier
+                    .size(34.dp)
+                    .background(theme.surfaceContainerHighest, RoundedCornerShape(9.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
                 Icon(
                     Icons.Filled.Memory,
                     contentDescription = null,
                     tint = if (isLoaded) theme.primary else theme.onSurfaceVariant,
+                    modifier = Modifier.size(19.dp),
                 )
-            },
-            trailingContent = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isLoading && !isLoaded) {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else if (isLoaded) {
-                        Button(onClick = onLoad) { Text("Unload") }
-                    } else {
-                        Button(onClick = onLoad) { Text("Load") }
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(
-                            Icons.Filled.Delete,
-                            contentDescription = "Delete model",
-                            tint = theme.onSurfaceVariant,
-                        )
-                    }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    model.filename,
+                    maxLines = 1,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                )
+                Text(
+                    "${"%.1f".format(model.sizeBytes / 1e9)} GB" +
+                        (model.contextLength?.let { " · ctx $it" } ?: ""),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = theme.onSurfaceVariant,
+                )
+            }
+            if (isLoading && !isLoaded) {
+                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                Button(onClick = onLoad) {
+                    Text(if (isLoaded) "Unload" else "Load")
                 }
-            },
-        )
-        AnimatedVisibility(visible = isLoaded) {
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = "Delete model",
+                    tint = theme.onSurfaceVariant,
+                )
+            }
+        }
+        if (isLoaded) {
             Text(
                 "Loaded — chat now uses this model locally",
                 style = MaterialTheme.typography.bodySmall,
                 color = theme.primary,
-                modifier = Modifier.padding(start = 16.dp, bottom = 12.dp),
+                modifier = Modifier.padding(start = 60.dp, bottom = 10.dp),
             )
         }
     }
@@ -206,8 +239,8 @@ private fun CatalogModelCard(
     onPause: () -> Unit,
 ) {
     val theme = MaterialTheme.colorScheme
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
+    ModelCard {
+        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(model.name, style = MaterialTheme.typography.titleMedium)
@@ -276,14 +309,18 @@ private fun CatalogModelCard(
     }
 }
 
-/** Non-interactive spec badge (quant, size, RAM floor). Replaces AssistChip:
- * these carry no action, so a tap target would be a lie. */
+/** Non-interactive spec tag (quant, size, RAM floor): bordered, quiet.
+ * No tap target — these carry no action. */
 @Composable
 private fun Badge(text: String) {
-    androidx.compose.material3.Badge(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    ) {
-        Text(text, style = MaterialTheme.typography.labelSmall)
-    }
+    val theme = MaterialTheme.colorScheme
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        color = theme.onSurfaceVariant,
+        modifier = Modifier
+            .background(theme.surfaceContainerHigh, RoundedCornerShape(7.dp))
+            .border(1.dp, theme.outlineVariant, RoundedCornerShape(7.dp))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
 }

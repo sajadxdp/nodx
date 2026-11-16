@@ -1,36 +1,47 @@
 package app.nodx.ui.settings
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,7 +53,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -50,6 +66,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.nodx.AppContainer
+import app.nodx.R
 import app.nodx.data.EngineModeSetting
 import app.nodx.data.Provider
 import app.nodx.data.Settings
@@ -66,6 +83,11 @@ class SettingsViewModel(private val store: SettingsStore) : ViewModel() {
         store.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }
 
+/**
+ * Settings, rebuilt on the opencode-mobile layout language: uppercase
+ * section headers over grouped white cards, hairline dividers between
+ * rows, and each row's icon inside a rounded tile.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(container: AppContainer) {
@@ -96,256 +118,312 @@ fun SettingsScreen(container: AppContainer) {
                 .padding(padding)
                 .consumeWindowInsets(padding)
                 .verticalScroll(rememberScrollState())
-                .imePadding(),
+                .imePadding()
+                .padding(bottom = 24.dp),
         ) {
             SectionHeader("Appearance")
-            var pendingTheme by remember(s.theme) { mutableStateOf(s.theme) }
-            ListItem(
-                headlineContent = { Text("Theme") },
-                leadingContent = { Icon(Icons.Filled.Palette, contentDescription = null) },
-                supportingContent = {
-                    SingleChoiceSegmentedButtonRow(Modifier.padding(top = 8.dp)) {
-                        ThemeSetting.entries.forEachIndexed { index, mode ->
-                            SegmentedButton(
-                                selected = pendingTheme == mode,
-                                onClick = {
-                                    pendingTheme = mode
-                                    scope.launch { store.setTheme(mode) }
-                                },
-                                shape = SegmentedButtonDefaults.itemShape(index, ThemeSetting.entries.size),
-                            ) { Text(mode.label) }
-                        }
-                    }
-                },
-            )
-            ListItem(
-                headlineContent = { Text("Dynamic color") },
-                modifier = Modifier.clickable(
-                    // The whole row toggles, not just the switch — a tap on
-                    // the switch itself is consumed by the switch and won't
-                    // double-fire here.
-                    onClick = { scope.launch { store.setDynamicColor(!s.dynamicColor) } },
-                ),
-                supportingContent = {
-                    Text(
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                            "Material You — derive colors from your wallpaper"
-                        else
-                            "Requires Android 12 or newer"
-                    )
-                },
-                trailingContent = {
-                    Switch(
-                        checked = s.dynamicColor,
-                        enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
-                        onCheckedChange = { scope.launch { store.setDynamicColor(it) } },
-                    )
-                },
-            )
-
-            SectionHeader("Engine")
-            ListItem(
-                headlineContent = { Text("Engine mode") },
-                leadingContent = { Icon(Icons.Filled.Memory, contentDescription = null) },
-                supportingContent = {
-                    // Buttons below the copy (same as the Theme row) — as a
-                    // trailing slot they squeezed the text into four wrapped
-                    // lines on narrow screens.
-                    Column {
-                        Text("Local — on-device GGUF · Cloud — provider APIs.")
-                        SingleChoiceSegmentedButtonRow(Modifier.padding(top = 8.dp)) {
-                            EngineModeSetting.entries.forEachIndexed { index, mode ->
+            SectionCard {
+                var pendingTheme by remember(s.theme) { mutableStateOf(s.theme) }
+                SettingRow(
+                    icon = Icons.Filled.Palette,
+                    title = "Theme",
+                    supporting = {
+                        SingleChoiceSegmentedButtonRow(
+                            Modifier
+                                .padding(top = 8.dp)
+                                .fillMaxWidth(),
+                        ) {
+                            ThemeSetting.entries.forEachIndexed { index, mode ->
                                 SegmentedButton(
-                                    selected = s.engineMode == mode,
-                                    onClick = { scope.launch { store.setEngineMode(mode) } },
+                                    selected = pendingTheme == mode,
+                                    onClick = {
+                                        pendingTheme = mode
+                                        scope.launch { store.setTheme(mode) }
+                                    },
                                     shape = SegmentedButtonDefaults.itemShape(
                                         index,
-                                        EngineModeSetting.entries.size,
+                                        ThemeSetting.entries.size,
                                     ),
                                 ) { Text(mode.label) }
                             }
                         }
-                    }
-                },
-            )
-
-            SectionHeader("Cloud provider")
-            var providerMenu by remember { mutableStateOf(false) }
-            ListItem(
-                headlineContent = { Text(s.provider.label) },
-                supportingContent = { Text("Endpoint: ${s.baseUrl.ifBlank { "(not set)" }}") },
-                trailingContent = {
-                    OutlinedButton(onClick = { providerMenu = true }) { Text("Change") }
-                    DropdownMenu(expanded = providerMenu, onDismissRequest = { providerMenu = false }) {
-                        Provider.entries.forEach { p ->
-                            DropdownMenuItem(
-                                text = { Text(p.label) },
-                                onClick = {
-                                    providerMenu = false
-                                    scope.launch { store.setProvider(p) }
-                                },
-                            )
-                        }
-                    }
-                },
-            )
-
-            if (s.provider == Provider.CUSTOM) {
-                var baseUrl by remember(s.baseUrl) { mutableStateOf(s.baseUrl) }
-                ListItem(
-                    headlineContent = { Text("Base URL") },
-                    supportingContent = {
-                        OutlinedTextField(
-                            value = baseUrl,
-                            onValueChange = { baseUrl = it },
-                            placeholder = { Text("https://host/v1") },
-                            singleLine = true,
-                            modifier = Modifier.padding(top = 4.dp),
+                    },
+                )
+                RowDivider()
+                SettingRow(
+                    icon = Icons.Filled.Tag,
+                    title = "Dynamic color",
+                    supporting = {
+                        Text(
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                                "Material You — derive colors from your wallpaper"
+                            else
+                                "Requires Android 12 or newer",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = theme.onSurfaceVariant,
                         )
                     },
-                    trailingContent = {
-                        Button(onClick = { scope.launch { store.setBaseUrl(baseUrl) } }) {
-                            Text("Save")
+                    onClick = { scope.launch { store.setDynamicColor(!s.dynamicColor) } },
+                    trailing = {
+                        Switch(
+                            checked = s.dynamicColor,
+                            enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+                            onCheckedChange = { scope.launch { store.setDynamicColor(it) } },
+                        )
+                    },
+                )
+            }
+
+            SectionHeader("Engine")
+            SectionCard {
+                SettingRow(
+                    icon = Icons.Filled.Memory,
+                    title = "Engine mode",
+                    supporting = {
+                        Column {
+                            Text(
+                                "Local — on-device GGUF · Cloud — provider APIs.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = theme.onSurfaceVariant,
+                            )
+                            SingleChoiceSegmentedButtonRow(
+                                Modifier
+                                    .padding(top = 8.dp)
+                                    .fillMaxWidth(),
+                            ) {
+                                EngineModeSetting.entries.forEachIndexed { index, mode ->
+                                    SegmentedButton(
+                                        selected = s.engineMode == mode,
+                                        onClick = { scope.launch { store.setEngineMode(mode) } },
+                                        shape = SegmentedButtonDefaults.itemShape(
+                                            index,
+                                            EngineModeSetting.entries.size,
+                                        ),
+                                    ) { Text(mode.label) }
+                                }
+                            }
                         }
                     },
                 )
             }
 
-            var apiKey by remember(s.apiKey) { mutableStateOf(s.apiKey) }
-            ListItem(
-                headlineContent = { Text("API key") },
-                leadingContent = { Icon(Icons.Filled.Key, contentDescription = null) },
-                supportingContent = {
-                    OutlinedTextField(
-                        value = apiKey,
-                        onValueChange = { apiKey = it },
-                        placeholder = { Text(if (s.apiKey.isBlank()) "Enter key" else "•••••••• (saved)") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                },
-                trailingContent = {
-                    Button(onClick = { scope.launch { store.setApiKey(apiKey) } }) { Text("Save") }
-                },
-            )
-
-            var model by remember(s.model) { mutableStateOf(s.model) }
-            ListItem(
-                headlineContent = { Text("Model") },
-                supportingContent = {
-                    OutlinedTextField(
-                        value = model,
-                        onValueChange = { model = it },
-                        placeholder = { Text(s.provider.defaultModel) },
-                        singleLine = true,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                },
-                trailingContent = {
-                    Button(onClick = { scope.launch { store.setModel(model) } }) { Text("Save") }
-                },
-            )
-
-            SectionHeader("Generation")
-            var systemPrompt by remember(s.systemPrompt) { mutableStateOf(s.systemPrompt) }
-            ListItem(
-                headlineContent = { Text("System prompt") },
-                supportingContent = {
-                    OutlinedTextField(
-                        value = systemPrompt,
-                        onValueChange = { systemPrompt = it },
-                        placeholder = { Text("Optional persona for the assistant") },
-                        modifier = Modifier
-                            .padding(top = 4.dp)
-                            .fillMaxWidth(),
-                    )
-                },
-                trailingContent = {
-                    Button(onClick = { scope.launch { store.setSystemPrompt(systemPrompt) } }) {
-                        Text("Save")
-                    }
-                },
-            )
-
-            var temperature by remember(s.temperature) { mutableStateOf(s.temperature) }
-            ListItem(
-                headlineContent = { Text("Temperature (%.2f)".format(temperature)) },
-                supportingContent = {
-                    androidx.compose.material3.Slider(
-                        value = temperature.toFloat(),
-                        onValueChange = { temperature = it.toDouble() },
-                        onValueChangeFinished = {
-                            scope.launch { store.setTemperature(temperature) }
+            SectionHeader("Cloud provider")
+            SectionCard {
+                var providerMenu by remember { mutableStateOf(false) }
+                SettingRow(
+                    title = s.provider.label,
+                    supporting = {
+                        Text(
+                            "Endpoint: ${s.baseUrl.ifBlank { "(not set)" }}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = theme.onSurfaceVariant,
+                        )
+                    },
+                    trailing = {
+                        Button(onClick = { providerMenu = true }) { Text("Change") }
+                        DropdownMenu(expanded = providerMenu, onDismissRequest = { providerMenu = false }) {
+                            Provider.entries.forEach { p ->
+                                DropdownMenuItem(
+                                    text = { Text(p.label) },
+                                    onClick = {
+                                        providerMenu = false
+                                        scope.launch { store.setProvider(p) }
+                                    },
+                                )
+                            }
+                        }
+                    },
+                )
+                if (s.provider == Provider.CUSTOM) {
+                    RowDivider()
+                    var baseUrl by remember(s.baseUrl) { mutableStateOf(s.baseUrl) }
+                    SettingRow(
+                        title = "Base URL",
+                        supporting = {
+                            OutlinedTextField(
+                                value = baseUrl,
+                                onValueChange = { baseUrl = it },
+                                placeholder = { Text("https://host/v1") },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .padding(top = 4.dp)
+                                    .fillMaxWidth(),
+                            )
                         },
-                        valueRange = 0f..2f,
-                    )
-                },
-            )
-
-            var maxTokens by remember(s.maxTokens) { mutableStateOf(s.maxTokens.toString()) }
-            ListItem(
-                headlineContent = { Text("Max tokens") },
-                supportingContent = {
-                    OutlinedTextField(
-                        value = maxTokens,
-                        onValueChange = { maxTokens = it.filter { c -> c.isDigit() }.take(5) },
-                        placeholder = { Text("1024") },
-                        singleLine = true,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                },
-                trailingContent = {
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                store.setMaxTokens(maxTokens.toIntOrNull() ?: 1024)
+                        trailing = {
+                            Button(onClick = { scope.launch { store.setBaseUrl(baseUrl) } }) {
+                                Text("Save")
                             }
                         },
-                    ) { Text("Save") }
-                },
-            )
+                    )
+                }
+                RowDivider()
+                var apiKey by remember(s.apiKey) { mutableStateOf(s.apiKey) }
+                SettingRow(
+                    icon = Icons.Filled.Key,
+                    title = "API key",
+                    supporting = {
+                        OutlinedTextField(
+                            value = apiKey,
+                            onValueChange = { apiKey = it },
+                            placeholder = { Text(if (s.apiKey.isBlank()) "Enter key" else "•••••••• (saved)") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true,
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .fillMaxWidth(),
+                        )
+                    },
+                    trailing = {
+                        Button(onClick = { scope.launch { store.setApiKey(apiKey) } }) { Text("Save") }
+                    },
+                )
+                RowDivider()
+                var model by remember(s.model) { mutableStateOf(s.model) }
+                SettingRow(
+                    title = "Model",
+                    supporting = {
+                        OutlinedTextField(
+                            value = model,
+                            onValueChange = { model = it },
+                            placeholder = { Text(s.provider.defaultModel) },
+                            singleLine = true,
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .fillMaxWidth(),
+                        )
+                    },
+                    trailing = {
+                        Button(onClick = { scope.launch { store.setModel(model) } }) { Text("Save") }
+                    },
+                )
+            }
+
+            SectionHeader("Generation")
+            SectionCard {
+                var systemPrompt by remember(s.systemPrompt) { mutableStateOf(s.systemPrompt) }
+                SettingRow(
+                    title = "System prompt",
+                    supporting = {
+                        OutlinedTextField(
+                            value = systemPrompt,
+                            onValueChange = { systemPrompt = it },
+                            placeholder = { Text("Optional persona for the assistant") },
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .fillMaxWidth(),
+                        )
+                    },
+                    trailing = {
+                        Button(onClick = { scope.launch { store.setSystemPrompt(systemPrompt) } }) {
+                            Text("Save")
+                        }
+                    },
+                )
+                RowDivider()
+                var temperature by remember(s.temperature) { mutableStateOf(s.temperature) }
+                SettingRow(
+                    title = "Temperature (%.2f)".format(temperature),
+                    supporting = {
+                        androidx.compose.material3.Slider(
+                            value = temperature.toFloat(),
+                            onValueChange = { temperature = it.toDouble() },
+                            onValueChangeFinished = {
+                                scope.launch { store.setTemperature(temperature) }
+                            },
+                            valueRange = 0f..2f,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    },
+                )
+                RowDivider()
+                var maxTokens by remember(s.maxTokens) { mutableStateOf(s.maxTokens.toString()) }
+                SettingRow(
+                    title = "Max tokens",
+                    supporting = {
+                        OutlinedTextField(
+                            value = maxTokens,
+                            onValueChange = { maxTokens = it.filter { c -> c.isDigit() }.take(5) },
+                            placeholder = { Text("1024") },
+                            singleLine = true,
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .fillMaxWidth(),
+                        )
+                    },
+                    trailing = {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    store.setMaxTokens(maxTokens.toIntOrNull() ?: 1024)
+                                }
+                            },
+                        ) { Text("Save") }
+                    },
+                )
+            }
 
             SectionHeader("About")
-            val context = androidx.compose.ui.platform.LocalContext.current
-            val version = app.nodx.BuildConfig.VERSION_NAME
-            ListItem(
-                headlineContent = { Text("nodx") },
-                supportingContent = {
-                    Text("Local-first AI chat · v$version")
-                },
-                leadingContent = {
-                    Icon(
-                        painter = androidx.compose.ui.res.painterResource(app.nodx.R.mipmap.ic_launcher_foreground),
-                        contentDescription = null,
-                        modifier = Modifier.size(28.dp),
-                    )
-                },
-            )
-            ListItem(
-                headlineContent = { Text("Version") },
-                supportingContent = {
-                    Text("v$version (build ${app.nodx.BuildConfig.VERSION_CODE})")
-                },
-                leadingContent = { Icon(Icons.Filled.Info, contentDescription = null) },
-            )
-            ListItem(
-                headlineContent = { Text("Developer") },
-                supportingContent = { Text("sajad · sajadxdp") },
-                leadingContent = { Icon(Icons.Filled.Person, contentDescription = null) },
-            )
-            AboutLink(
-                label = "GitHub",
-                supporting = "github.com/sajadxdp/nodx",
-                url = "https://github.com/sajadxdp/nodx",
-                context = context,
-            )
-            AboutLink(
-                label = "Report an issue",
-                supporting = "github.com/sajadxdp/nodx/issues",
-                url = "https://github.com/sajadxdp/nodx/issues",
-                context = context,
-            )
+            SectionCard {
+                val context = LocalContext.current
+                val version = app.nodx.BuildConfig.VERSION_NAME
+                SettingRow(
+                    icon = null,
+                    title = "nodx",
+                    supporting = {
+                        Text(
+                            "Local-first AI chat · v$version",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = theme.onSurfaceVariant,
+                        )
+                    },
+                    iconSlot = {
+                        Icon(
+                            painter = painterResource(R.mipmap.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier.size(26.dp),
+                        )
+                    },
+                )
+                RowDivider()
+                SettingRow(
+                    icon = Icons.Filled.Tag,
+                    title = "Version",
+                    supporting = {
+                        Text(
+                            "v$version (build ${app.nodx.BuildConfig.VERSION_CODE})",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = theme.onSurfaceVariant,
+                        )
+                    },
+                )
+                RowDivider()
+                SettingRow(
+                    icon = Icons.Filled.Person,
+                    title = "Developer",
+                    supporting = {
+                        Text(
+                            "sajad · sajadxdp",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = theme.onSurfaceVariant,
+                        )
+                    },
+                )
+                RowDivider()
+                AboutLink(
+                    label = "GitHub",
+                    supporting = "github.com/sajadxdp/nodx",
+                    url = "https://github.com/sajadxdp/nodx",
+                    context = context,
+                )
+                RowDivider()
+                AboutLink(
+                    label = "Report an issue",
+                    supporting = "github.com/sajadxdp/nodx/issues",
+                    url = "https://github.com/sajadxdp/nodx/issues",
+                    context = context,
+                )
+            }
         }
     }
 }
@@ -358,23 +436,104 @@ private fun AboutLink(
     url: String,
     context: android.content.Context,
 ) {
-    ListItem(
-        headlineContent = { Text(label) },
-        supportingContent = { Text(supporting) },
-        leadingContent = { Icon(Icons.Filled.Code, contentDescription = null) },
-        trailingContent = {
-            Icon(
-                Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+    val theme = MaterialTheme.colorScheme
+    SettingRow(
+        icon = Icons.Filled.Code,
+        title = label,
+        supporting = {
+            Text(
+                supporting,
+                style = MaterialTheme.typography.bodySmall,
+                color = theme.onSurfaceVariant,
             )
         },
-        modifier = Modifier.clickable {
+        onClick = {
             context.startActivity(
-                android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
         },
+        trailing = {
+            Icon(
+                Icons.Filled.OpenInNew,
+                contentDescription = null,
+                tint = theme.onSurfaceVariant,
+            )
+        },
+    )
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        title.uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 28.dp, top = 24.dp, bottom = 8.dp),
+    )
+}
+
+/** The grouped card: flat surface, hairline border, rounded corners. */
+@Composable
+private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
+    val theme = MaterialTheme.colorScheme
+    Surface(
+        color = theme.surfaceContainerLowest,
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp),
+    ) {
+        Column(content = content)
+    }
+}
+
+/** One setting row: icon tile · title (+ supporting content) · trailing. */
+@Composable
+private fun SettingRow(
+    title: String,
+    icon: ImageVector? = null,
+    iconSlot: (@Composable () -> Unit)? = null,
+    supporting: (@Composable ColumnScope.() -> Unit)? = null,
+    trailing: (@Composable RowScope.() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+) {
+    val theme = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (iconSlot != null) {
+            iconSlot()
+            Spacer(Modifier.width(12.dp))
+        } else if (icon != null) {
+            Box(
+                Modifier
+                    .size(34.dp)
+                    .background(theme.surfaceContainerHighest, RoundedCornerShape(9.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(19.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            supporting?.invoke(this)
+        }
+        trailing?.invoke(this)
+    }
+}
+
+/** Hairline divider inset past the icon tile, like iOS grouped lists. */
+@Composable
+private fun RowDivider() {
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(start = 60.dp),
     )
 }
 
@@ -390,14 +549,3 @@ private val EngineModeSetting.label: String
         EngineModeSetting.LOCAL -> "Local"
         EngineModeSetting.CLOUD -> "Cloud"
     }
-
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        title.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp),
-    )
-}

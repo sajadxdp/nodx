@@ -1,15 +1,20 @@
 package app.nodx.ui.sessions
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
@@ -19,10 +24,10 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -36,7 +41,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -179,8 +186,8 @@ fun SessionsScreen(
                 Icon(
                     Icons.AutoMirrored.Filled.Chat,
                     contentDescription = null,
-                    tint = theme.primary,
-                    modifier = Modifier.size(56.dp),
+                    tint = theme.outline,
+                    modifier = Modifier.size(64.dp),
                 )
                 Text(
                     "No sessions yet",
@@ -195,44 +202,78 @@ fun SessionsScreen(
                 )
             }
         } else {
+            // Session cards, opencode-mobile style: title, a relative-time
+            // meta row, and a chevron — flat, quiet, hairline-bordered.
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    horizontal = 12.dp, vertical = 8.dp,
+                ),
             ) {
                 items(sessions, key = { it.id }) { session ->
                     var menuOpen by remember { mutableStateOf(false) }
-                    ListItem(
-                        headlineContent = { Text(session.title, maxLines = 1) },
-                        supportingContent = { Text(relativeTime(session.updatedAt)) },
-                        leadingContent = {
-                            Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null)
-                        },
-                        trailingContent = {
-                            IconButton(onClick = { menuOpen = true }) {
-                                Icon(Icons.Filled.MoreVert, contentDescription = "Session menu")
-                            }
-                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                                DropdownMenuItem(
-                                    text = { Text("Rename") },
-                                    leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                                    onClick = {
-                                        menuOpen = false
-                                        vm.pendingRename.value = session
-                                    },
+                    Box {
+                        Surface(
+                            color = theme.surfaceContainerHigh,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onOpenSession(session.id) },
+                        ) {
+                            Row(
+                                Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        session.title,
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.bodyLarge
+                                            .copy(fontWeight = FontWeight.SemiBold),
+                                    )
+                                    Text(
+                                        relativeTime(session.updatedAt),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = theme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 2.dp),
+                                    )
+                                }
+                                IconButton(onClick = { menuOpen = true }) {
+                                    Icon(
+                                        Icons.Filled.MoreVert,
+                                        contentDescription = "Session menu",
+                                        tint = theme.onSurfaceVariant,
+                                    )
+                                }
+                                Icon(
+                                    Icons.Filled.ChevronRight,
+                                    contentDescription = null,
+                                    tint = theme.outline,
                                 )
-                                DropdownMenuItem(
-                                    text = { Text("Delete") },
-                                    leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                                    onClick = {
-                                        menuOpen = false
-                                        vm.pendingDelete.value = session
-                                    },
-                                )
                             }
-                        },
-                        modifier = Modifier.clickable { onOpenSession(session.id) },
-                    )
+                        }
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Rename") },
+                                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    vm.pendingRename.value = session
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete") },
+                                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    vm.pendingDelete.value = session
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }

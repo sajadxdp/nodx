@@ -18,8 +18,10 @@ import app.nodx.domain.TokenEvent
 import app.nodx.domain.toEngineMessages
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class ChatUiState(
@@ -40,6 +42,15 @@ class ChatViewModel(
 
     private val _state = MutableStateFlow(ChatUiState())
     val state: StateFlow<ChatUiState> = _state.asStateFlow()
+
+    /** Live settings for the composer toolbar (engine chip, model chip). */
+    val settingsFlow: StateFlow<Settings?> =
+        settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** Engine switch from the composer toolbar; persists like the Settings tab. */
+    fun setEngineMode(mode: EngineModeSetting) {
+        viewModelScope.launch { settings.setEngineMode(mode) }
+    }
 
     private var genJob: Job? = null
 
