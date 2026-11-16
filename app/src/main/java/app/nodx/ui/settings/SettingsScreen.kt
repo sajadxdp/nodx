@@ -7,12 +7,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -300,8 +305,77 @@ fun SettingsScreen(container: AppContainer) {
                     ) { Text("Save") }
                 },
             )
+
+            SectionHeader("About")
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val version = app.nodx.BuildConfig.VERSION_NAME
+            ListItem(
+                headlineContent = { Text("nodx") },
+                supportingContent = {
+                    Text("Local-first AI chat · v$version")
+                },
+                leadingContent = {
+                    Icon(
+                        painter = androidx.compose.ui.res.painterResource(app.nodx.R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp),
+                    )
+                },
+            )
+            ListItem(
+                headlineContent = { Text("Version") },
+                supportingContent = {
+                    Text("v$version (build ${app.nodx.BuildConfig.VERSION_CODE})")
+                },
+                leadingContent = { Icon(Icons.Filled.Info, contentDescription = null) },
+            )
+            ListItem(
+                headlineContent = { Text("Developer") },
+                supportingContent = { Text("sajad · sajadxdp") },
+                leadingContent = { Icon(Icons.Filled.Person, contentDescription = null) },
+            )
+            AboutLink(
+                label = "GitHub",
+                supporting = "github.com/sajadxdp/nodx",
+                url = "https://github.com/sajadxdp/nodx",
+                context = context,
+            )
+            AboutLink(
+                label = "Report an issue",
+                supporting = "github.com/sajadxdp/nodx/issues",
+                url = "https://github.com/sajadxdp/nodx/issues",
+                context = context,
+            )
         }
     }
+}
+
+/** A settings row that opens a URL in the browser. */
+@Composable
+private fun AboutLink(
+    label: String,
+    supporting: String,
+    url: String,
+    context: android.content.Context,
+) {
+    ListItem(
+        headlineContent = { Text(label) },
+        supportingContent = { Text(supporting) },
+        leadingContent = { Icon(Icons.Filled.Code, contentDescription = null) },
+        trailingContent = {
+            Icon(
+                Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        modifier = Modifier.clickable {
+            context.startActivity(
+                android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        },
+    )
 }
 
 private val ThemeSetting.label: String

@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -17,6 +18,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -64,6 +67,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -77,8 +81,12 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import kotlin.math.PI
+import kotlin.math.sin
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.nodx.AppContainer
 import app.nodx.domain.ChatMessage
@@ -117,6 +125,10 @@ fun ChatScreen(container: AppContainer) {
     // Claude-style body switch (greeting → conversation) re-focus handling.
     val conversationFocus = remember { FocusRequester() }
     var focusConversation by remember { mutableStateOf(false) }
+
+    // A composer draft belongs to the chat it was typed in — starting a new
+    // chat (or opening an old one) starts with a clean field.
+    LaunchedEffect(state.sessionId) { text = "" }
 
     // Keep the view pinned to the newest content while streaming. Following
     // the reply is the default; a user drag toward earlier content pauses it,
@@ -218,10 +230,12 @@ fun ChatScreen(container: AppContainer) {
                 .consumeWindowInsets(padding)
                 .imePadding(),
         ) {
-            // Claude-style body: a centered greeting + input on an empty
-            // chat; the same input slides to the bottom once conversation
-            // starts. State (draft text) is hoisted so both branches share
-            // the field seamlessly.
+            // Empty-chat body, built on the "shark on vacation" motif: sea
+            // creatures drift across the screen while a centered greeting
+            // and the input sit slightly above center — anchored as one
+            // group instead of floating dead-center. The input settles to
+            // the bottom once the conversation starts. Draft text is
+            // hoisted so both branches share the field seamlessly.
             AnimatedContent(
                 targetState = state.messages.isEmpty(),
                 transitionSpec = {
@@ -231,23 +245,28 @@ fun ChatScreen(container: AppContainer) {
                 label = "chatBody",
             ) { empty ->
                 if (empty) {
-                    Column(
-                        Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Greeting()
-                        Spacer(Modifier.size(28.dp))
-                        Composer(
-                            value = text,
-                            onValueChange = { text = it },
-                            canSend = !state.isGenerating,
-                            onSend = {
-                                if (state.messages.isEmpty()) focusConversation = true
-                                vm.send(text)
-                                text = ""
-                            },
-                        )
+                    Box(Modifier.fillMaxSize()) {
+                        SwimmingSea(Modifier.matchParentSize())
+                        Column(
+                            Modifier
+                                .align(BiasAlignment(0f, -0.32f))
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Greeting()
+                            Spacer(Modifier.size(20.dp))
+                            Composer(
+                                value = text,
+                                onValueChange = { text = it },
+                                canSend = !state.isGenerating,
+                                onSend = {
+                                    if (state.messages.isEmpty()) focusConversation = true
+                                    vm.send(text)
+                                    text = ""
+                                },
+                                hint = "What's on your mind?",
+                            )
+                        }
                     }
                 } else {
                     Column(Modifier.fillMaxSize()) {
@@ -454,6 +473,114 @@ private fun TypingDots(color: Color) {
     }
 }
 
+/**
+ * The "shark on vacation" scene, tuned for nodx: a few ASCII sea
+ * creatures and hearts drift across the empty chat, in brand colors at
+ * low opacity so the effect reads as ambience, not decoration. Each
+ * creature animates its own horizontal drift plus a gentle vertical
+ * bob; reads are deferred into the offset lambda so the per-frame
+ * motion never recomposes the tree.
+ */
+@Composable
+private fun SwimmingSea(modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier) {
+        val w = maxWidth
+        val h = maxHeight
+        Creature(
+            "><(((º>", h, w,
+            yFrac = 0.16f, durMs = 15000, delayMs = 0,
+            color = SeaTeal, alpha = 0.34f,
+        )
+        Creature(
+            "<3", h, w,
+            yFrac = 0.28f, durMs = 19000, delayMs = 6000,
+            color = SeaViolet, alpha = 0.26f, reverse = true,
+        )
+        Creature(
+            "><(((º>", h, w,
+            yFrac = 0.46f, durMs = 17000, delayMs = 9000,
+            color = SeaViolet, alpha = 0.28f, reverse = true,
+        )
+        Creature(
+            "♡", h, w,
+            yFrac = 0.62f, durMs = 14000, delayMs = 3000,
+            color = SeaTeal, alpha = 0.28f,
+        )
+        Creature(
+            "><(((º>", h, w,
+            yFrac = 0.80f, durMs = 13000, delayMs = 11000,
+            color = SeaViolet, alpha = 0.20f,
+        )
+    }
+}
+
+private val SeaTeal = Color(0xFF2FB8A6)   // the post's turquoise, muted for nodx
+private val SeaViolet = Color(0xFF883DEA) // brand accent
+
+@Composable
+private fun Creature(
+    text: String,
+    maxHeight: Dp,
+    maxWidth: Dp,
+    yFrac: Float,
+    durMs: Int,
+    delayMs: Int,
+    color: Color,
+    alpha: Float,
+    reverse: Boolean = false,
+) {
+    val transition = rememberInfiniteTransition(label = "sea")
+    // Horizontal position: a 0..1 loop across the width (plus bleed at
+    // both ends so creatures enter and leave the screen).
+    val drift by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durMs, easing = LinearEasing),
+            initialStartOffset = StartOffset(delayMs),
+        ),
+        label = "drift",
+    )
+    // Vertical bob: a full sine cycle inside the drift.
+    val bob by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durMs / 3, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+            initialStartOffset = StartOffset(delayMs),
+        ),
+        label = "bob",
+    )
+    // Gentle alpha breathing so creatures feel alive, not pasted on.
+    val glow by transition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durMs / 4, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+            initialStartOffset = StartOffset(delayMs),
+        ),
+        label = "glow",
+    )
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium.copy(
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+        ),
+        color = color.copy(alpha = alpha * glow),
+        modifier = Modifier.offset {
+            val x = if (reverse) (1.12f - drift) else (drift - 0.12f)
+            val y = yFrac + sin(bob * 2f * PI.toFloat()) * 0.012f
+            IntOffset(
+                (x * maxWidth.toPx()).toInt(),
+                (y * maxHeight.toPx()).toInt(),
+            )
+        },
+    )
+}
+
 @Composable
 private fun Composer(
     value: String,
@@ -461,6 +588,7 @@ private fun Composer(
     canSend: Boolean,
     onSend: () -> Unit,
     focusRequester: FocusRequester? = null,
+    hint: String = "Message…",
 ) {
     Row(
         Modifier
@@ -474,7 +602,7 @@ private fun Composer(
             modifier = Modifier
                 .weight(1f)
                 .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
-            placeholder = { Text("Message…") },
+            placeholder = { Text(hint) },
             shape = MaterialTheme.shapes.extraLarge,
             minLines = 1,
             maxLines = 5,

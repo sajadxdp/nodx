@@ -15,8 +15,8 @@ android {
         applicationId = "app.nodx"
         minSdk = 28 // matches :llama (Vulkan 1.1 symbols); Android 9+
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.3.1"
+        versionCode = 9
+        versionName = "0.4.0"
     }
 
     signingConfigs {
@@ -57,6 +57,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
