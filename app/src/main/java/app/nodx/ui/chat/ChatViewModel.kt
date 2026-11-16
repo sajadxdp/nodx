@@ -65,7 +65,9 @@ class ChatViewModel(
         _state.value = _state.value.copy(
             sessionId = sessionId,
             title = session.title,
-            messages = _state.value.messages + userMsg,
+            // The live bubble appears immediately so the typing indicator
+            // runs while the engine warms up (deltas replace it in place).
+            messages = _state.value.messages + userMsg + withLiveAssistant(""),
             isGenerating = true,
         )
 
@@ -175,7 +177,10 @@ class ChatViewModel(
             msgs.filter { it.id != lastAssistant.id }
         } else msgs
 
-        _state.value = _state.value.copy(messages = kept, isGenerating = true)
+        _state.value = _state.value.copy(
+            messages = kept + withLiveAssistant(""),
+            isGenerating = true,
+        )
 
         // Re-send the last user message against the trimmed history.
         genJob = viewModelScope.launch {
